@@ -50,8 +50,8 @@ function fmtDate(d: string): string {
   return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-function fmtDateShort(): string {
-  return new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function fmtDateShort(d?: string): string {
+  return (d ? new Date(d) : new Date()).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 // =========================================
@@ -70,6 +70,7 @@ function navigateTo(page: string) {
   if (page === 'overview') loadOverview();
   if (page === 'financeiro') loadFinanceiro();
   if (page === 'reembolsos') loadReembolsos();
+  if (page === 'bistecos') loadBistecos();
   if (page === 'settings') loadSettings();
 }
 
@@ -119,22 +120,44 @@ function loginSuccess() {
 // =========================================
 // OVERVIEW
 // =========================================
-function loadOverview() {
-  // KPI values (will be populated from API later)
-  $('#kpi-vendas').textContent = fmt(0);
-  $('#kpi-ticket').textContent = fmt(0);
-  $('#kpi-pix-pagos').textContent = '0';
-  $('#kpi-vendas-hoje').textContent = fmt(0);
+async function loadOverview() {
+  try {
+    const res = await api('/api/v1/dashboard/stats');
+    const { kpis, charts } = res;
 
-  renderRevenueChart();
-  renderWeekChart('week-sales-chart');
-  renderWeekChart('week-ticket-chart');
+    // Update KPI cards
+    $('#kpi-vendas').textContent = fmt(kpis.vendas);
+    $('#kpi-ticket').textContent = fmt(kpis.ticket);
+    $('#kpi-pix-pagos').textContent = kpis.pixPagos.toString();
+    $('#kpi-vendas-hoje').textContent = fmt(kpis.vendasHoje);
+
+    // Update Deltas
+    setDelta('kpi-vendas-delta', kpis.deltas.vendas);
+    setDelta('kpi-ticket-delta', kpis.deltas.ticket);
+    setDelta('kpi-pix-delta', kpis.deltas.pixPagos);
+    setDelta('kpi-hoje-delta', kpis.deltas.vendasHoje);
+
+    // Render Charts
+    renderRevenueChart(charts.weekSales);
+    renderWeekChart('week-sales-chart', charts.weekSales);
+    renderWeekChart('week-ticket-chart', charts.weekTicket);
+  } catch (err) {
+    console.error('Failed to load stats', err);
+  }
+}
+
+function setDelta(id: string, value: number) {
+  const el = $(`#${id}`);
+  if (!el) return;
+  const isPositive = value >= 0;
+  el.className = `kpi-delta ${isPositive ? 'positive' : 'negative'}`;
+  el.textContent = `${isPositive ? '+' : ''}${value.toFixed(1)}% vs mês ant/média`;
 }
 
 // =========================================
 // Revenue Chart (Canvas)
 // =========================================
-function renderRevenueChart() {
+function renderRevenueChart(dynamicData?: number[]) {
   const canvas = document.getElementById('revenue-chart') as HTMLCanvasElement;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -150,8 +173,13 @@ function renderRevenueChart() {
   const pad = { top: 16, right: 16, bottom: 32, left: 52 };
 
   const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-  const data = [0, 0, 0, 0, 0, 0, 0]; // Real data would come from API
-  const max = Math.max(...data, 1) * 1.15;
+  const data = dynamicData && dynamicData.length === 7 ? dynamicData : [0, 0, 0, 0, 0, 0, 0];
+  const total = data.reduce((a, b) => a + b, 0);
+
+  const chartTotalEl = $('#chart-total');
+  if (chartTotalEl) chartTotalEl.textContent = fmt(total);
+
+  const max = Math.max(...data, 100) * 1.15; // fallback max 100 centavos minimum
   const cw = w - pad.left - pad.right;
   const ch = h - pad.top - pad.bottom;
 
@@ -215,7 +243,7 @@ function renderRevenueChart() {
   });
 }
 
-function renderWeekChart(canvasId: string) {
+function renderWeekChart(canvasId: string, dynamicData?: number[]) {
   const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -231,10 +259,18 @@ function renderWeekChart(canvasId: string) {
   const pad = { top: 10, right: 10, bottom: 28, left: 10 };
 
   const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-  const data = [0, 0, 0, 0, 0, 0, 0];
-  const max = Math.max(...data, 1);
+  const data = dynamicData && dynamicData.length === 7 ? dynamicData : [0, 0, 0, 0, 0, 0, 0];
+  const max = Math.max(...data, 100);
   const barW = ((w - pad.left - pad.right) / labels.length) * 0.6;
   const gap = ((w - pad.left - pad.right) / labels.length);
+
+  // Update Summary labels
+  const sum = data.reduce((a, b) => a + b, 0);
+  const avg = Math.round(sum / 7);
+  const summaryEl = $(`#${canvasId.replace('-chart', '-summary')}`);
+  if (summaryEl) {
+    summaryEl.textContent = `Total da semana: ${fmt(sum)} • Média diária: ${fmt(avg)}`;
+  }
 
   labels.forEach((l, i) => {
     const x = pad.left + gap * i + gap / 2 - barW / 2;
@@ -286,12 +322,14 @@ function loadFinanceiro() {
 
 async function loadSaldoTab() {
   try {
-    const res = await api('/api/v1/payouts');
+    const res = await api('/api/v1/dashboard/payouts');
     const payouts = res.payouts || [];
+    const availableTotal = res.availableBalance || 0;
 
-    const pending = payouts.filter((p: any) => p.status === 'pending');
+    const pending = payouts.filter((p: any) => p.status === 'requested' || p.status === 'processing');
     const pendingTotal = pending.reduce((s: number, p: any) => s + p.amount, 0);
 
+    $('#fin-available').textContent = fmt(availableTotal);
     $('#fin-pending').textContent = fmt(pendingTotal);
     $('#fin-blocked').textContent = fmt(0);
 
@@ -311,8 +349,8 @@ async function loadSaldoTab() {
 }
 
 function renderPayoutItem(p: any): string {
-  const sc = p.status === 'completed' ? 'completed' : p.status === 'pending' ? 'pending' : 'failed';
-  const sl = p.status === 'completed' ? 'efetivado' : p.status === 'pending' ? 'pendente' : 'falhou';
+  const sc = p.status === 'completed' ? 'completed' : (p.status === 'requested' || p.status === 'processing') ? 'pending' : 'failed';
+  const sl = p.status === 'completed' ? 'efetivado' : (p.status === 'requested' || p.status === 'processing') ? 'pendente' : 'falhou';
   const icons: Record<string, string> = {
     completed: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>',
     pending: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
@@ -323,7 +361,7 @@ function renderPayoutItem(p: any): string {
         <div class="tx-left">
             <div class="tx-icon ${sc}">${icons[sc] || icons.pending}</div>
             <div class="tx-info">
-                <span class="tx-id">${p.pix_key}</span>
+                <span class="tx-id">${p.pix_key || p.id}</span>
                 <span class="tx-date">${fmtDate(p.created_at)}</span>
             </div>
         </div>
@@ -343,18 +381,32 @@ async function loadTransacoesTab() {
   tbody.innerHTML = '';
 
   try {
-    // Demo row (real data would come from DB)
-    tbody.innerHTML = `
+    const res = await api('/api/v1/dashboard/transactions');
+    const txs = res.transactions || [];
+
+    if (txs.length === 0) {
+      emptyEl.style.display = 'flex';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    txs.forEach((tx: any) => {
+      const isPayout = tx.type === 'payout';
+      const stType = tx.status === 'paid' || tx.status === 'completed' ? 'success' : tx.status === 'pending' || tx.status === 'requested' ? 'warning' : 'danger';
+
+      tbody.innerHTML += `
             <tr>
-                <td style="color:var(--text-tertiary);font-family:monospace;font-size:11px;">charge_001</td>
-                <td>João Silva</td>
-                <td style="color:var(--text-tertiary);">•••.456.789-••</td>
-                <td style="font-weight:600;">R$ 1,00</td>
-                <td><span class="badge badge-success">Pago</span></td>
-                <td style="color:var(--text-tertiary);">${fmtDate(new Date().toISOString())}</td>
+                <td style="color:var(--text-tertiary);font-family:monospace;font-size:11px;">${tx.correlation_id.substring(0, 12)}...</td>
+                <td>${isPayout ? 'Saque (Bisteco)' : 'Cobrança Pix'}</td>
+                <td style="color:var(--text-tertiary);">${isPayout ? '---' : 'Consumidor'}</td>
+                <td style="font-weight:600; color:${isPayout ? 'var(--danger-color)' : 'var(--success-color)'};">
+                    ${isPayout ? '-' : '+'} ${fmt(tx.amount)}
+                </td>
+                <td><span class="badge badge-${stType}">${tx.status}</span></td>
+                <td style="color:var(--text-tertiary);">${fmtDate(tx.created_at)}</td>
             </tr>
         `;
-    emptyEl.style.display = 'none';
+    });
   } catch (e) {
     emptyEl.style.display = 'flex';
   }
@@ -370,6 +422,92 @@ async function loadReembolsos() {
 
   // Placeholder — real data would come from API
   emptyEl.style.display = 'flex';
+}
+
+// =========================================
+// BISTECOS (ADMIN)
+// =========================================
+async function loadBistecos() {
+  const tbody = $('#merchants-tbody');
+  const emptyEl = $('#merchants-empty');
+  tbody.innerHTML = '';
+
+  try {
+    const res = await api('/api/v1/admin/merchants');
+    const merchants = res.merchants || [];
+
+    if (merchants.length === 0) {
+      emptyEl.style.display = 'flex';
+      emptyEl.innerHTML = '<p>Nenhum lojista cadastrado ainda.</p>';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    merchants.forEach((m: any) => {
+      tbody.innerHTML += `
+            <tr>
+                <td style="font-weight:600;">${m.name}</td>
+                <td style="color:var(--text-tertiary);">${m.email}</td>
+                <td style="font-family:monospace;font-size:12px;">${m.api_key_prefix}••••••••</td>
+                <td style="font-weight:600; color:var(--success-color);">${fmt(m.balance)}</td>
+                <td style="color:var(--text-tertiary);">${fmtDateShort(m.created_at)}</td>
+            </tr>
+        `;
+    });
+  } catch (e) {
+    emptyEl.style.display = 'flex';
+    emptyEl.innerHTML = '<p>Erro ao carregar lojistas.</p>';
+  }
+}
+
+function initMerchantForm() {
+  const form = $('#merchant-form') as HTMLFormElement;
+  const resultEl = $('#merchant-result');
+  const apikeyBox = $('#new-apikey-box');
+  const apikeyDisplay = $('#raw-apikey-display');
+
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#merchant-submit-btn') as HTMLButtonElement;
+    btn.disabled = true;
+    resultEl.textContent = '';
+    resultEl.className = 'payout-result';
+    apikeyBox.style.display = 'none';
+
+    const name = ($('#new-merchant-name') as HTMLInputElement).value.trim();
+    const email = ($('#new-merchant-email') as HTMLInputElement).value.trim();
+
+    try {
+      const res = await api('/api/v1/admin/merchants', {
+        method: 'POST',
+        body: JSON.stringify({ name, email }),
+      });
+
+      resultEl.textContent = `${res.merchant.name} cadastrado com sucesso!`;
+      resultEl.classList.add('success');
+      showToast('Lojista criado!', 'success');
+
+      // Mostrar a chave raw, ela só vai aparecer AGORA.
+      apikeyDisplay.textContent = res.api_key;
+      apikeyBox.style.display = 'block';
+
+      // Recarregar lista
+      loadBistecos();
+
+      // Limpar formulário
+      form.reset();
+
+    } catch (err: any) {
+      const msg = err.error || err.message || 'Erro ao criar lojista';
+      resultEl.textContent = msg;
+      resultEl.classList.add('error');
+      showToast(msg, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
 }
 
 // =========================================
@@ -461,6 +599,7 @@ async function init() {
   initLogin();
   initPayoutForm();
   initSubTabs();
+  initMerchantForm();
 
   // Main nav
   $$('.nav-item[data-page]').forEach(el => {
@@ -506,4 +645,5 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
 

@@ -95,6 +95,12 @@ async function buildApp() {
         api.register(require('./routes/payouts'), { prefix: '/api/v1/payouts' });
     });
 
+    // ========================================
+    // Rotas de Admin e Dashboard
+    // ========================================
+    app.register(require('./routes/admin'), { prefix: '/api/v1/admin' });
+    app.register(require('./routes/dashboard'), { prefix: '/api/v1/dashboard' });
+
     return app;
 }
 

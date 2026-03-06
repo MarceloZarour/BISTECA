@@ -457,7 +457,7 @@ function initSubTabs() {
 // =========================================
 // Init
 // =========================================
-function init() {
+async function init() {
   initLogin();
   initPayoutForm();
   initSubTabs();
@@ -480,7 +480,18 @@ function init() {
     ($('#api-key-input') as HTMLInputElement).value = '';
   });
 
-  // Saved session
+  // Auto-login: try server config first, then localStorage
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/dashboard/config`);
+    const data = await res.json();
+    if (data.apiKey) {
+      apiKey = data.apiKey;
+      loginSuccess();
+      return;
+    }
+  } catch (_) { /* server config not available */ }
+
+  // Fallback: saved session
   const saved = localStorage.getItem('bisteca_api_key');
   if (saved) { apiKey = saved; loginSuccess(); }
 
@@ -495,3 +506,4 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+

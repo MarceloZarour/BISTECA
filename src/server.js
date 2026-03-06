@@ -61,6 +61,12 @@ async function buildApp() {
     // Health check
     app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
+    // Dashboard auto-login config
+    app.get('/api/v1/dashboard/config', async () => {
+        const key = process.env.DASHBOARD_API_KEY || '';
+        return { apiKey: key };
+    });
+
     // Webhook da Woovi (não precisa de auth do merchant, tem validação própria)
     app.all('/webhooks/woovi', wooviWebhookHandler);
 

@@ -94,9 +94,11 @@ async function handleCallbackQuery(callbackQuery, settings) {
             });
 
             const valorFormatado = `R$ ${priceReais.toFixed(2).replace('.', ',')}`;
-            const chargeMsg = (settings.bot_msg_charge || '💳 Valor: {valor}\n\nCopie o código PIX:\n{pix_code}\n\n⏳ Expira em 1 hora.')
+            const template = settings.bot_msg_charge ||
+                '💰 Pix gerado com sucesso!\n\nValor: {valor}\n\n📋 Copia e Cola:\n{pix_code}\n\n⏰ Expira em 1 hora\n\n✅ Após o pagamento, você receberá automaticamente o produto aqui no chat!';
+            const chargeMsg = template
                 .replace('{valor}', valorFormatado)
-                .replace('{pix_code}', wooviResponse.brCode);
+                .replace('{pix_code}', `<code>${wooviResponse.brCode}</code>`);
 
             await sendMessage(settings.bot_token, chatId, chargeMsg);
             console.log(`[TelegramBot] PIX gerado para chatId ${chatId}: ${correlationID}`);

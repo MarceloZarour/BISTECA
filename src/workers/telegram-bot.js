@@ -98,7 +98,7 @@ async function handleCallbackQuery(callbackQuery, settings) {
                 '💰 Pix gerado com sucesso!\n\nValor: {valor}\n\n📋 Copia e Cola:\n{pix_code}\n\n⏰ Expira em 1 hora\n\n✅ Após o pagamento, você receberá automaticamente o produto aqui no chat!';
             const chargeMsg = template
                 .replace('{valor}', valorFormatado)
-                .replace('{pix_code}', `<code>${wooviResponse.brCode}</code>`);
+                .replace('{pix_code}', `<pre>${wooviResponse.brCode}</pre>`);
 
             await sendMessage(settings.bot_token, chatId, chargeMsg);
             console.log(`[TelegramBot] PIX gerado para chatId ${chatId}: ${correlationID}`);

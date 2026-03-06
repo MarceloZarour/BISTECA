@@ -126,7 +126,7 @@ async function adminRoutes(app) {
     // ==========================================
     const ALL_SETTINGS_KEYS = [
         'telegram_bot_token', 'telegram_chat_id',
-        'bot_token',
+        'bot_token', 'bot_price', 'bot_merchant_id',
         'bot_msg_welcome', 'bot_msg_charge', 'bot_msg_success', 'bot_msg_expired',
     ];
 
@@ -137,6 +137,8 @@ async function adminRoutes(app) {
             telegram_bot_token: map.telegram_bot_token ? '***' + map.telegram_bot_token.slice(-6) : null,
             telegram_chat_id: map.telegram_chat_id || null,
             bot_token: map.bot_token ? '***' + map.bot_token.slice(-6) : null,
+            bot_price: map.bot_price || '',
+            bot_merchant_id: map.bot_merchant_id || '',
             bot_msg_welcome: map.bot_msg_welcome || '',
             bot_msg_charge: map.bot_msg_charge || '',
             bot_msg_success: map.bot_msg_success || '',
@@ -150,7 +152,7 @@ async function adminRoutes(app) {
     app.patch('/settings', async (request, reply) => {
         const allowed = [
             'telegram_bot_token', 'telegram_chat_id',
-            'bot_token',
+            'bot_token', 'bot_price', 'bot_merchant_id',
             'bot_msg_welcome', 'bot_msg_charge', 'bot_msg_success', 'bot_msg_expired',
         ];
         for (const key of allowed) {

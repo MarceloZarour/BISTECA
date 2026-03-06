@@ -1283,12 +1283,17 @@ app = Flask(__name__)
                         <div class="bot-flow">
                             <div class="bot-flow-step">
                                 <div class="bot-flow-icon">🙋</div>
-                                <p>Cliente envia /comprar</p>
+                                <p>Cliente envia /start</p>
+                            </div>
+                            <div class="bot-flow-arrow">›</div>
+                            <div class="bot-flow-step">
+                                <div class="bot-flow-icon">🔘</div>
+                                <p>Bot exibe botão com preço</p>
                             </div>
                             <div class="bot-flow-arrow">›</div>
                             <div class="bot-flow-step">
                                 <div class="bot-flow-icon">💳</div>
-                                <p>Bot gera PIX via API</p>
+                                <p>Cliente clica → Bot gera PIX</p>
                             </div>
                             <div class="bot-flow-arrow">›</div>
                             <div class="bot-flow-step">
@@ -1324,8 +1329,22 @@ app = Flask(__name__)
                                     <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Obtenha em <strong>@BotFather</strong> no Telegram com o comando /newbot</p>
                                 </div>
                             </div>
+                            <div class="settings-row" style="margin-top:16px;">
+                                <label style="min-width:120px;font-size:13px;font-weight:500;">Preço do Produto</label>
+                                <div style="flex:1;">
+                                    <input type="number" id="bot-price" placeholder="47.00" step="0.01" min="1" style="width:100%;" />
+                                    <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Valor em reais exibido no botão de compra (ex: 47.00)</p>
+                                </div>
+                            </div>
+                            <div class="settings-row" style="margin-top:16px;">
+                                <label style="min-width:120px;font-size:13px;font-weight:500;">ID do Merchant</label>
+                                <div style="flex:1;">
+                                    <input type="text" id="bot-merchant-id" placeholder="UUID do merchant que receberá as vendas" style="width:100%;font-family:monospace;font-size:12px;" />
+                                    <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Copie o ID do merchant na aba <strong>Merchants</strong></p>
+                                </div>
+                            </div>
                             <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;">
-                                <button type="submit" class="btn-primary">Salvar Token</button>
+                                <button type="submit" class="btn-primary">Salvar Configurações</button>
                                 <button type="button" class="btn-secondary" id="bot-test-btn">⚡ Testar Conexão</button>
                             </div>
                             <p id="bot-config-result" class="payout-result" style="margin-top:10px;"></p>

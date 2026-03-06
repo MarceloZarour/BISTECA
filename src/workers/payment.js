@@ -105,6 +105,19 @@ async function handleChargeCompleted(correlationId, payload) {
             paid_at: new Date(),
         });
 
+    // 4b) Notifica bot de vendas Telegram (cobranças geradas pelo bot)
+    if (charge.bot_chat_id) {
+        const settingRows = await db('platform_settings').whereIn('key', ['bot_token', 'bot_msg_success']);
+        const s = Object.fromEntries(settingRows.map(r => [r.key, r.value]));
+        if (s.bot_token && s.bot_msg_success) {
+            fetch(`https://api.telegram.org/bot${s.bot_token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: charge.bot_chat_id, text: s.bot_msg_success, parse_mode: 'HTML' }),
+            }).catch(e => console.error('[Worker] Falha ao notificar Telegram:', e.message));
+        }
+    }
+
     // 5) Enfileira webhook para o Bot do merchant
     const { Queue } = require('bullmq');
     const webhookDispatchQueue = new Queue('webhook-dispatch', { connection: redis });
@@ -138,11 +151,26 @@ async function handleChargeCompleted(correlationId, payload) {
  * Processa expiração de cobrança.
  */
 async function handleChargeExpired(correlationId) {
+    const charge = await db('charges').where({ correlation_id: correlationId, status: 'pending' }).first();
+
     await db('charges')
         .where({ correlation_id: correlationId, status: 'pending' })
         .update({ status: 'expired' });
 
     console.log(`[Worker] Cobrança expirada: ${correlationId}`);
+
+    // Notifica bot de vendas Telegram (cobranças geradas pelo bot)
+    if (charge?.bot_chat_id) {
+        const settingRows = await db('platform_settings').whereIn('key', ['bot_token', 'bot_msg_expired']);
+        const s = Object.fromEntries(settingRows.map(r => [r.key, r.value]));
+        if (s.bot_token && s.bot_msg_expired) {
+            fetch(`https://api.telegram.org/bot${s.bot_token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: charge.bot_chat_id, text: s.bot_msg_expired, parse_mode: 'HTML' }),
+            }).catch(e => console.error('[Worker] Falha ao notificar Telegram:', e.message));
+        }
+    }
 }
 
 module.exports = { startPaymentWorker, handleChargeCompleted };

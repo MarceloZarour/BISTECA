@@ -728,6 +728,12 @@ async function loadBotSettings() {
     const tokenInput = $('#bot-token') as HTMLInputElement;
     if (tokenInput && res.bot_token) tokenInput.placeholder = `Atual: ***${res.bot_token.slice(-6)} (deixe vazio para manter)`;
 
+    const priceInput = $('#bot-price') as HTMLInputElement;
+    if (priceInput && res.bot_price) priceInput.value = res.bot_price;
+
+    const merchantIdInput = $('#bot-merchant-id') as HTMLInputElement;
+    if (merchantIdInput && res.bot_merchant_id) merchantIdInput.value = res.bot_merchant_id;
+
     const badge = $('#bot-status-badge') as HTMLElement;
     if (badge) {
       if (res.bot_token) {
@@ -765,6 +771,10 @@ function initBotForm() {
       const body: Record<string, string> = {};
       const token = ($('#bot-token') as HTMLInputElement)?.value.trim();
       if (token) body.bot_token = token;
+      const price = ($('#bot-price') as HTMLInputElement)?.value.trim();
+      if (price) body.bot_price = price;
+      const merchantId = ($('#bot-merchant-id') as HTMLInputElement)?.value.trim();
+      if (merchantId) body.bot_merchant_id = merchantId;
       if (!Object.keys(body).length) return;
       try {
         await api('/api/v1/admin/settings', { method: 'PATCH', body: JSON.stringify(body) });

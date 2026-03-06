@@ -134,14 +134,14 @@ async function getBalance(accountId) {
 async function resolvePayout({ amount, payoutId, idempotencyKey }) {
     return db.transaction(async (trx) => {
         const payoutEscrow = await trx('accounts').where('owner_type', 'payout_escrow').first();
-        const externalSettlement = await trx('accounts').where('owner_type', 'external_settlement').first();
+        let externalSettlement = await trx('accounts').where('owner_type', 'external_settlement').first();
 
         if (!externalSettlement) {
             // Cria conta de liquidação se não existir (apenas uma vez)
             const [newAcc] = await trx('accounts').insert({
                 id: crypto.randomUUID(), owner_type: 'external_settlement'
             }).returning('*');
-            Object.assign(externalSettlement || {}, newAcc);
+            externalSettlement = newAcc;
         }
 
         const txId = crypto.randomUUID();
@@ -157,7 +157,7 @@ async function resolvePayout({ amount, payoutId, idempotencyKey }) {
             },
             {
                 transaction_id: txId,
-                account_id: externalSettlement.id || externalSettlement, // Fallback caso acabe de ser criada
+                account_id: externalSettlement.id,
                 entry_type: 'credit',
                 amount,
                 description: `Saída externa - Saque ${payoutId}`,
@@ -203,4 +203,65 @@ async function rejectPayout({ merchantAccountId, amount, payoutId, idempotencyKe
     });
 }
 
-module.exports = { processPayment, reserveForPayout, resolvePayout, rejectPayout, getBalance };
+/**
+ * Processa um reembolso: reverte o crédito do merchant e da plataforma, credita no escrow.
+ * É o espelho exato do processPayment.
+ */
+async function processRefund({ refundId, merchantAccountId, amount, feeRate, idempotencyKey }) {
+    return db.transaction(async (trx) => {
+        // 1) Idempotência
+        const existing = await trx('ledger_entries')
+            .where('idempotency_key', `${idempotencyKey}_merchant_d`)
+            .first();
+        if (existing) {
+            return { status: 'already_processed', transactionId: existing.transaction_id };
+        }
+
+        // 2) Calcula split
+        const fee = Math.round(amount * feeRate);
+        const merchantAmount = amount - fee;
+        const txId = crypto.randomUUID();
+
+        // 3) Contas do sistema
+        const escrowAccount = await trx('accounts').where('owner_type', 'escrow').first();
+        const platformAccount = await trx('accounts').where('owner_type', 'platform').first();
+
+        if (!escrowAccount || !platformAccount) {
+            throw new Error('System accounts not found.');
+        }
+
+        // 4) Estorno: débito no merchant, débito na plataforma, crédito no escrow
+        await trx('ledger_entries').insert([
+            {
+                transaction_id: txId,
+                account_id: merchantAccountId,
+                entry_type: 'debit',
+                amount: merchantAmount,
+                description: `Estorno de venda - Reembolso ${refundId}`,
+                idempotency_key: `${idempotencyKey}_merchant_d`,
+            },
+            {
+                transaction_id: txId,
+                account_id: platformAccount.id,
+                entry_type: 'debit',
+                amount: fee,
+                description: `Estorno de taxa - Reembolso ${refundId}`,
+                idempotency_key: `${idempotencyKey}_platform_d`,
+            },
+            {
+                transaction_id: txId,
+                account_id: escrowAccount.id,
+                entry_type: 'credit',
+                amount,
+                description: `Crédito escrow - Reembolso ${refundId}`,
+                idempotency_key: `${idempotencyKey}_escrow_c`,
+            },
+        ]);
+
+        await trx.raw('REFRESH MATERIALIZED VIEW CONCURRENTLY account_balances');
+
+        return { status: 'processed', transactionId: txId, merchantAmount, fee };
+    });
+}
+
+module.exports = { processPayment, reserveForPayout, resolvePayout, rejectPayout, getBalance, processRefund };

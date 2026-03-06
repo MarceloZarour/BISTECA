@@ -488,6 +488,34 @@
                         <p class="page-subtitle">Solicitações de devolução de pagamento</p>
                     </div>
                 </header>
+
+                <!-- Formulário de Solicitação -->
+                <div class="card" style="margin-bottom:14px;">
+                    <div class="card-header">
+                        <h3>Solicitar Reembolso</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="refund-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                            <div class="input-group" style="flex:2;min-width:200px;">
+                                <label for="refund-charge-id">ID da Cobrança (correlationID)</label>
+                                <input type="text" id="refund-charge-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required />
+                            </div>
+                            <div class="input-group" style="flex:1;min-width:130px;">
+                                <label for="refund-value">Valor em centavos</label>
+                                <input type="number" id="refund-value" placeholder="Vazio = total" min="1" />
+                            </div>
+                            <div class="input-group" style="flex:2;min-width:160px;">
+                                <label for="refund-comment">Motivo</label>
+                                <input type="text" id="refund-comment" placeholder="Solicitado pelo cliente" />
+                            </div>
+                            <button type="submit" class="btn-primary" id="refund-submit-btn" style="height:42px;margin-bottom:0;">
+                                <span>Reembolsar</span>
+                            </button>
+                        </form>
+                        <p id="refund-result" class="payout-result" style="margin-top:0.75rem;"></p>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-body table-scroll">
                         <table class="data-table" id="refund-table">
@@ -601,24 +629,89 @@
                 <header class="page-header">
                     <div>
                         <h2 class="page-title">Configurações</h2>
-                        <p class="page-subtitle">Configurações globais da plataforma BISTECA</p>
+                        <p class="page-subtitle">Sua conta e integrações</p>
                     </div>
                 </header>
                 <div class="settings-grid">
+                    <!-- Dados da Conta -->
                     <div class="card">
                         <div class="card-header">
-                            <h3>Informações da Instância</h3>
+                            <h3>Sua Conta</h3>
                         </div>
                         <div class="card-body">
                             <div class="settings-row">
-                                <span class="settings-label">DASHBOARD_API_KEY</span>
-                                <code class="api-key-display" id="settings-apikey">••••••••••••••••</code>
+                                <span class="settings-label">Nome</span>
+                                <span id="settings-name" style="color:var(--text-primary);font-weight:600;">—</span>
                             </div>
                             <div class="settings-row">
-                                <span class="settings-label">URL da API</span>
-                                <code class="api-key-display"
-                                    id="settings-apiurl">https://bisteca-production.up.railway.app/api/v1</code>
+                                <span class="settings-label">ID da Conta</span>
+                                <code class="api-key-display" id="settings-merchantid" style="font-size:11px;">—</code>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Chave de Integração -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Chave de Integração (API)</h3>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:1rem;">
+                                Use esta chave no seu bot (WhatsApp, Telegram, etc.) para criar cobranças Pix.
+                                <strong style="color:var(--danger-color);">Ela não é mostrada novamente após o cadastro.</strong>
+                            </p>
+                            <div class="settings-row" style="gap:0.75rem;flex-wrap:wrap;">
+                                <code class="api-key-display" id="settings-apikey" style="flex:1;min-width:0;word-break:break-all;">••••••••••••••••••••••••</code>
+                                <button id="copy-apikey-btn" class="btn-secondary" style="white-space:nowrap;padding:6px 14px;font-size:13px;">Copiar</button>
+                            </div>
+                            <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-color);">
+                                <button id="regen-apikey-btn" class="btn-secondary" style="color:var(--danger-color);border-color:var(--danger-color);">
+                                    Gerar nova chave
+                                </button>
+                                <p id="regen-warning" style="font-size:12px;color:var(--danger-color);margin-top:0.5rem;display:none;">
+                                    ⚠️ A chave atual para de funcionar imediatamente. Todos os bots precisarão ser atualizados. Clique em <strong>Confirmar</strong> para continuar.
+                                </p>
+                            </div>
+                            <div class="settings-row" style="margin-top:0.75rem;">
+                                <span class="settings-label">URL da API</span>
+                                <code class="api-key-display" id="settings-apiurl" style="font-size:11px;"></code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configurações de Integração -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Integrações</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="settings-form">
+                                <div class="input-group">
+                                    <label for="settings-webhook-url">URL do Webhook do Bot</label>
+                                    <input type="url" id="settings-webhook-url"
+                                        placeholder="https://meubot.com/webhook" />
+                                    <small style="color:var(--text-tertiary);font-size:12px;">O gateway envia uma notificação POST aqui quando uma venda é confirmada.</small>
+                                </div>
+                                <div class="input-group" style="margin-top:1rem;">
+                                    <label for="settings-pixkey">Chave Pix Padrão para Saques</label>
+                                    <input type="text" id="settings-pixkey"
+                                        placeholder="CPF, email, telefone ou chave aleatória" />
+                                </div>
+                                <div class="input-group" style="margin-top:0.75rem;">
+                                    <label for="settings-pixtype">Tipo da Chave Pix</label>
+                                    <select id="settings-pixtype">
+                                        <option value="CPF">CPF</option>
+                                        <option value="CNPJ">CNPJ</option>
+                                        <option value="EMAIL">Email</option>
+                                        <option value="PHONE">Telefone</option>
+                                        <option value="RANDOM">Aleatória</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn-primary" id="settings-save-btn" style="margin-top:1rem;">
+                                    <span>Salvar Configurações</span>
+                                </button>
+                                <p id="settings-result" class="payout-result" style="margin-top:0.75rem;"></p>
+                            </form>
                         </div>
                     </div>
                 </div>

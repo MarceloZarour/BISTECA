@@ -9,6 +9,28 @@ const API_BASE = '';  // relative — works via Vite proxy (dev) and same-origin
 // State
 let apiKey = '';
 let isAdmin = false;
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+// =========================================
+// Auto-refresh
+// =========================================
+function startAutoRefresh() {
+  stopAutoRefresh();
+  refreshInterval = setInterval(() => {
+    if (document.hidden) return;
+    const activePage = document.querySelector('.page.active')?.id;
+    if (activePage === 'page-overview') loadOverview();
+    if (activePage === 'page-financeiro') {
+      const activeSubtab = document.querySelector('.sub-tab.active') as HTMLElement;
+      if (activeSubtab?.dataset.subtab === 'saldo') loadSaldoTab();
+      if (activeSubtab?.dataset.subtab === 'transacoes') loadTransacoesTab();
+    }
+  }, 30_000);
+}
+
+function stopAutoRefresh() {
+  if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
+}
 
 // DOM
 const $ = (sel: string) => document.querySelector(sel) as HTMLElement;
@@ -171,6 +193,7 @@ function loginSuccess() {
   localStorage.setItem('bisteca_api_key', apiKey);
   $('#login-screen').classList.remove('active');
   $('#app-screen').classList.add('active');
+  startAutoRefresh();
 
   const h = new Date().getHours();
   $('#greeting').textContent = `${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'} 👋`;
@@ -492,8 +515,72 @@ async function loadReembolsos() {
   const emptyEl = $('#refund-empty');
   tbody.innerHTML = '';
 
-  // Placeholder — real data would come from API
-  emptyEl.style.display = 'flex';
+  try {
+    const res = await api('/api/v1/refunds');
+    const refunds = res.refunds || [];
+
+    if (refunds.length === 0) {
+      emptyEl.style.display = 'flex';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    refunds.forEach((r: any) => {
+      const stType = r.status === 'completed' ? 'success' : r.status === 'pending' ? 'warning' : 'danger';
+      const stLabel = r.status === 'completed' ? 'concluído' : r.status === 'pending' ? 'pendente' : 'falhou';
+      tbody.innerHTML += `
+        <tr>
+          <td style="color:var(--text-tertiary);font-family:monospace;font-size:11px;">${r.id.substring(0, 12)}...</td>
+          <td style="font-family:monospace;font-size:11px;">${r.charge_correlation_id.substring(0, 12)}...</td>
+          <td style="color:var(--text-tertiary);">—</td>
+          <td style="font-weight:600;color:var(--danger-color);">- ${fmt(r.value)}</td>
+          <td><span class="badge badge-${stType}">${stLabel}</span></td>
+          <td style="color:var(--text-tertiary);">${r.comment || '—'}</td>
+          <td style="color:var(--text-tertiary);">${fmtDate(r.created_at)}</td>
+        </tr>
+      `;
+    });
+  } catch {
+    emptyEl.style.display = 'flex';
+  }
+}
+
+function initRefundForm() {
+  const form = $('#refund-form') as HTMLFormElement;
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#refund-submit-btn') as HTMLButtonElement;
+    const resultEl = $('#refund-result');
+    btn.disabled = true;
+    resultEl.textContent = '';
+    resultEl.className = 'payout-result';
+
+    const chargeCorrelationId = ($('#refund-charge-id') as HTMLInputElement).value.trim();
+    const valueRaw = ($('#refund-value') as HTMLInputElement).value.trim();
+    const comment = ($('#refund-comment') as HTMLInputElement).value.trim();
+
+    const body: Record<string, unknown> = { chargeCorrelationId };
+    if (valueRaw) body.value = parseInt(valueRaw, 10);
+    if (comment) body.comment = comment;
+
+    try {
+      const res = await api('/api/v1/refunds', { method: 'POST', body: JSON.stringify(body) });
+      resultEl.textContent = `Reembolso processado! ID: ${res.refund.id}`;
+      resultEl.classList.add('success');
+      showToast('Reembolso concluído com sucesso!', 'success');
+      form.reset();
+      loadReembolsos();
+    } catch (err: any) {
+      const msg = err.error || err.message || 'Erro ao processar reembolso';
+      resultEl.textContent = msg;
+      resultEl.classList.add('error');
+      showToast(msg, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
 }
 
 // =========================================
@@ -591,21 +678,149 @@ function initMerchantForm() {
 function loadSettings() {
   const rawKey = window.sessionStorage.getItem('temp_raw_api_key');
 
+  // URL da API dinâmica
+  const apiUrl = `${window.location.origin}/api/v1`;
+  const apiUrlEl = $('#settings-apiurl');
+  if (apiUrlEl) apiUrlEl.textContent = apiUrl;
+
   api('/api/v1/auth/me').then(res => {
-    $('#settings-merchantid').textContent = res.id;
-    $('#settings-name').textContent = res.name;
+    const nameEl = $('#settings-name');
+    const idEl = $('#settings-merchantid');
+    if (nameEl) nameEl.textContent = res.name;
+    if (idEl) idEl.textContent = res.id;
 
     const tokenEl = $('#settings-apikey');
-    if (rawKey) {
-      tokenEl.textContent = rawKey;
-      tokenEl.style.color = 'var(--success-color)';
-    } else {
-      tokenEl.textContent = `${res.api_key_prefix}••••••••••••••••••••••••••••••`;
-      tokenEl.style.color = 'var(--text-primary)';
+    if (tokenEl) {
+      if (rawKey) {
+        tokenEl.textContent = rawKey;
+        (tokenEl as HTMLElement).style.color = 'var(--success-color)';
+      } else {
+        tokenEl.textContent = `${res.api_key_prefix}••••••••••••••••••••••••••••••`;
+      }
     }
   }).catch(() => {
-    $('#settings-merchantid').textContent = '—';
-    $('#settings-name').textContent = 'Erro ao carregar';
+    const nameEl = $('#settings-name');
+    if (nameEl) nameEl.textContent = 'Erro ao carregar';
+  });
+
+  // Carrega configurações atuais (webhook_url e pix_key) do /me extendido
+  api('/api/v1/merchant-dashboard/stats').then(res => {
+    if (res.merchantInfo) {
+      const webhookEl = $('#settings-webhook-url') as HTMLInputElement;
+      const pixkeyEl = $('#settings-pixkey') as HTMLInputElement;
+      const pixtypeEl = $('#settings-pixtype') as HTMLSelectElement;
+      if (webhookEl && res.merchantInfo.webhook_url) webhookEl.value = res.merchantInfo.webhook_url;
+      if (pixkeyEl && res.merchantInfo.pix_key) pixkeyEl.value = res.merchantInfo.pix_key;
+      if (pixtypeEl && res.merchantInfo.pix_key_type) pixtypeEl.value = res.merchantInfo.pix_key_type;
+    }
+  }).catch(() => {});
+}
+
+function initSettingsForm() {
+  const form = $('#settings-form') as HTMLFormElement;
+  if (!form) return;
+
+  // Botão copiar API key
+  const copyBtn = $('#copy-apikey-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const keyEl = $('#settings-apikey');
+      const text = keyEl?.textContent || '';
+      if (text && !text.includes('•')) {
+        navigator.clipboard.writeText(text).then(() => showToast('Chave copiada!', 'success')).catch(() => {
+          // fallback
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          showToast('Chave copiada!', 'success');
+        });
+      } else {
+        showToast('Chave completa não disponível. Ela só é exibida no momento do cadastro.', 'error');
+      }
+    });
+  }
+
+  // Botão regenerar chave com dupla confirmação
+  const regenBtn = $('#regen-apikey-btn') as HTMLButtonElement;
+  const regenWarning = $('#regen-warning');
+  let regenPending = false;
+
+  if (regenBtn) {
+    regenBtn.addEventListener('click', async () => {
+      if (!regenPending) {
+        regenPending = true;
+        regenBtn.textContent = 'Confirmar geração';
+        regenBtn.style.background = 'rgba(239,68,68,0.15)';
+        if (regenWarning) regenWarning.style.display = 'block';
+        // Cancela a confirmação após 8s sem ação
+        setTimeout(() => {
+          if (regenPending) {
+            regenPending = false;
+            regenBtn.textContent = 'Gerar nova chave';
+            regenBtn.style.background = '';
+            if (regenWarning) regenWarning.style.display = 'none';
+          }
+        }, 8000);
+        return;
+      }
+
+      // Segunda confirmação: executa
+      regenPending = false;
+      regenBtn.disabled = true;
+      regenBtn.textContent = 'Gerando...';
+
+      try {
+        const res = await api('/api/v1/merchant-dashboard/regenerate-key', { method: 'POST' });
+        window.sessionStorage.setItem('temp_raw_api_key', res.api_key);
+
+        const tokenEl = $('#settings-apikey');
+        if (tokenEl) {
+          tokenEl.textContent = res.api_key;
+          (tokenEl as HTMLElement).style.color = 'var(--success-color)';
+        }
+        if (regenWarning) regenWarning.style.display = 'none';
+        regenBtn.textContent = 'Chave gerada!';
+        regenBtn.style.background = '';
+        showToast('Nova chave gerada! Salve agora.', 'success');
+      } catch (err: any) {
+        showToast(err.error || 'Erro ao gerar chave', 'error');
+        regenBtn.textContent = 'Gerar nova chave';
+        regenBtn.style.background = '';
+        regenBtn.disabled = false;
+      }
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#settings-save-btn') as HTMLButtonElement;
+    const resultEl = $('#settings-result');
+    btn.disabled = true;
+    resultEl.textContent = '';
+    resultEl.className = 'payout-result';
+
+    const webhook_url = ($('#settings-webhook-url') as HTMLInputElement).value.trim();
+    const pix_key = ($('#settings-pixkey') as HTMLInputElement).value.trim();
+    const pix_key_type = ($('#settings-pixtype') as HTMLSelectElement).value;
+
+    try {
+      await api('/api/v1/merchant-dashboard/settings', {
+        method: 'PATCH',
+        body: JSON.stringify({ webhook_url: webhook_url || null, pix_key: pix_key || null, pix_key_type }),
+      });
+      resultEl.textContent = 'Configurações salvas!';
+      resultEl.classList.add('success');
+      showToast('Configurações salvas com sucesso!', 'success');
+    } catch (err: any) {
+      const msg = err.error || err.message || 'Erro ao salvar';
+      resultEl.textContent = msg;
+      resultEl.classList.add('error');
+    } finally {
+      btn.disabled = false;
+    }
   });
 }
 
@@ -690,6 +905,8 @@ async function init() {
   initPayoutForm();
   initSubTabs();
   initMerchantForm();
+  initSettingsForm();
+  initRefundForm();
 
   // Main nav
   $$('.nav-item[data-page]').forEach(el => {
@@ -703,10 +920,12 @@ async function init() {
   // Logout
   $('#logout-btn').addEventListener('click', () => {
     localStorage.removeItem('bisteca_api_key');
+    window.sessionStorage.removeItem('temp_raw_api_key');
     apiKey = '';
+    isAdmin = false;
+    stopAutoRefresh();
     $('#app-screen').classList.remove('active');
     $('#login-screen').classList.add('active');
-    ($('#api-key-input') as HTMLInputElement).value = '';
   });
 
   // Auto-login: verify token

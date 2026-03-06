@@ -66,8 +66,8 @@ async function payoutsRoutes(app) {
             merchant_id: merchant.id,
             amount,
             pix_key: pixKey,
-            pix_key_type: pixKeyType || null,
-            correlation_id: correlationID,
+            pix_key_type: pixKeyType || 'RANDOM',
+            external_id: correlationID,
             status: 'pending'
         });
 
@@ -81,9 +81,13 @@ async function payoutsRoutes(app) {
             });
 
             // Conseguiu solicitar na Woovi, agora é só esperar o Webhook Assíncrono para concluir
-            await db('payouts')
-                .where('id', payoutId)
-                .update({ woovi_response: JSON.stringify(wooviResponse) });
+            // Atualiza o external_id com o ID retornado pela Woovi se disponível
+            const wooviExternalId = wooviResponse?.transfer?.correlationID || wooviResponse?.correlationID || null;
+            if (wooviExternalId) {
+                await db('payouts')
+                    .where('id', payoutId)
+                    .update({ external_id: wooviExternalId });
+            }
 
             return reply.status(201).send({
                 message: 'Payout requested successfully. Awaiting processing.',
@@ -105,7 +109,7 @@ async function payoutsRoutes(app) {
 
             await db('payouts')
                 .where('id', payoutId)
-                .update({ status: 'failed', woovi_response: JSON.stringify(err.data || { error: err.message }) });
+                .update({ status: 'failed', failure_reason: err.message || 'Woovi API error' });
 
             return reply.status(400).send({
                 error: 'Failed to initiate transfer at the payment provider.',

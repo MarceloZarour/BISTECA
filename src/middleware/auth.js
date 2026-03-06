@@ -23,21 +23,19 @@ async function apiKeyAuthMiddleware(request, reply) {
         return reply.status(401).send({ error: 'API key obrigatória no header Authorization' });
     }
 
-    // Busca merchant pelo prefixo da key (primeiros 9 chars: "bst_live_" ou "bst_test_")
-    const merchants = await db('merchants').where('is_active', true).select('*');
-
-    let authenticatedMerchant = null;
-    for (const merchant of merchants) {
-        const isValid = await bcrypt.compare(apiKey, merchant.api_key_hash);
-        if (isValid) {
-            authenticatedMerchant = merchant;
-            break;
-        }
-    }
-
-    if (!authenticatedMerchant) {
+    // Usa o prefixo (primeiros 16 chars) para lookup rápido, depois verifica o hash
+    const prefix = apiKey.substring(0, 16);
+    if (!prefix.startsWith('bst_')) {
         return reply.status(401).send({ error: 'API key inválida' });
     }
+
+    const merchant = await db('merchants').where({ api_key_prefix: prefix, is_active: true }).first();
+
+    if (!merchant || !(await bcrypt.compare(apiKey, merchant.api_key_hash))) {
+        return reply.status(401).send({ error: 'API key inválida' });
+    }
+
+    const authenticatedMerchant = merchant;
 
     // Injeta o merchant no request para uso nas rotas
     request.merchantId = authenticatedMerchant.id;

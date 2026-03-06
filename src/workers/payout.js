@@ -13,12 +13,12 @@ const connection = new Redis({
 
 /**
  * Worker dedicado para processar eventos de Transferências (Saques) aprovadas ou falhas.
- * Ele ouve a mesma fila 'payments-queue' que o worker de pagamentos, mas filtra pelos eventos TRANSFER.
+ * Ele ouve a fila 'payment-processing' e filtra pelos eventos de TRANSFER (saques).
  */
 function startPayoutWorker() {
     console.log('[Worker-Payouts] 🎧 Iniciando worker de saques...');
 
-    const worker = new Worker('payments-queue', async (job) => {
+    const worker = new Worker('payment-processing', async (job) => {
         const { eventType, correlationId, payload } = job.data;
 
         // Se não for evento de transferência, ignora e deixa pro processPayment.js (ou vice-versa limpo depois)

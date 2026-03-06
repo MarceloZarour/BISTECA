@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const db = require('../database/connection');
 
 /**
@@ -107,7 +109,10 @@ async function merchantDashboardRoutes(app) {
                 id: request.merchantId,
                 name: request.merchant.name,
                 email: request.merchant.email,
-                feeRate: request.merchant.fee_rate
+                feeRate: request.merchant.fee_rate,
+                webhook_url: request.merchant.webhook_url || null,
+                pix_key: request.merchant.pix_key || null,
+                pix_key_type: request.merchant.pix_key_type || null,
             },
             kpis: {
                 vendas: currentMonth.total,
@@ -157,6 +162,44 @@ async function merchantDashboardRoutes(app) {
             .slice(0, 50);
 
         return { transactions: allTransactions };
+    });
+
+    // ==========================================
+    // POST /regenerate-key - Gera uma nova API Key (revoga a atual)
+    // ==========================================
+    app.post('/regenerate-key', async (request, reply) => {
+        const rawApiKey = `bst_live_${crypto.randomBytes(32).toString('hex')}`;
+        const apiKeyHash = await bcrypt.hash(rawApiKey, 10);
+        const apiKeyPrefix = rawApiKey.substring(0, 16);
+
+        await db('merchants')
+            .where('id', request.merchantId)
+            .update({ api_key_hash: apiKeyHash, api_key_prefix: apiKeyPrefix });
+
+        return reply.status(201).send({
+            message: 'Nova chave gerada. Salve agora — ela não será exibida novamente.',
+            api_key: rawApiKey,
+        });
+    });
+
+    // ==========================================
+    // PATCH /settings - Atualiza Webhook URL e Chave Pix do Lojista
+    // ==========================================
+    app.patch('/settings', async (request, reply) => {
+        const { webhook_url, pix_key, pix_key_type } = request.body || {};
+
+        const updates = {};
+        if (webhook_url !== undefined) updates.webhook_url = webhook_url || null;
+        if (pix_key !== undefined) updates.pix_key = pix_key || null;
+        if (pix_key_type !== undefined) updates.pix_key_type = pix_key_type || null;
+
+        if (Object.keys(updates).length === 0) {
+            return reply.status(400).send({ error: 'Nenhum campo para atualizar' });
+        }
+
+        await db('merchants').where('id', request.merchantId).update(updates);
+
+        return { message: 'Configurações salvas com sucesso' };
     });
 
     // ==========================================

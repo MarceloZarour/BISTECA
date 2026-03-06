@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
-  <script type="module" crossorigin src="/assets/index-4PD3uqug.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-C6Z0WETW.css">
+  <script type="module" crossorigin src="/assets/index-DhjE6Zj9.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DEmXnotx.css">
 </head>
 
 <body>
@@ -22,15 +22,13 @@
             <header class="landing-header">
                 <div class="landing-logo">🥩 BISTECA</div>
                 <nav class="landing-nav">
-                    <a href="#">Benefícios</a>
-                    <a href="#">Taxas</a>
-                    <a href="#">Integrações</a>
+                    <a href="#beneficios">Benefícios</a>
+                    <a href="#taxas">Taxas</a>
+                    <a href="#integracoes">Integrações</a>
                 </nav>
                 <div class="landing-actions">
-                    <button class="landing-btn-outline"
-                        onclick="document.querySelector('[data-tab=login]').click()">Fazer Login</button>
-                    <button class="landing-btn-primary"
-                        onclick="document.querySelector('[data-tab=register]').click()">Criar Conta</button>
+                    <button class="landing-btn-outline" onclick="document.querySelector('[data-tab=login]').click(); document.querySelector('.login-container').scrollIntoView({behavior:'smooth'})">Fazer Login</button>
+                    <button class="landing-btn-primary" onclick="document.querySelector('[data-tab=register]').click(); document.querySelector('.login-container').scrollIntoView({behavior:'smooth'})">Criar Conta</button>
                 </div>
             </header>
 
@@ -52,7 +50,7 @@
                     <div class="landing-cta-group">
                         <button class="landing-btn-primary lg"
                             onclick="document.querySelector('[data-tab=register]').click()">Começar Agora</button>
-                        <button class="landing-btn-outline lg">Falar com especialista</button>
+                        <button class="landing-btn-outline lg" onclick="document.getElementById('beneficios').scrollIntoView({behavior:'smooth'})">Falar com especialista</button>
                     </div>
                 </div>
 
@@ -142,6 +140,133 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ===== BENEFÍCIOS ===== -->
+            <section id="beneficios" class="landing-section">
+                <div class="landing-section-header">
+                    <span class="landing-section-tag">Por que BISTECA</span>
+                    <h2>Tudo que você precisa<br>em um só lugar</h2>
+                    <p>Do primeiro Pix ao saque automático — a infraestrutura completa para sua operação crescer sem atrito.</p>
+                </div>
+                <div class="landing-benefits-grid">
+                    <div class="landing-benefit-card">
+                        <div class="landing-benefit-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        </div>
+                        <h3>Liquidação em segundos</h3>
+                        <p>Confirmação Pix instantânea com notificação automática via webhook para seu sistema ou bot.</p>
+                    </div>
+                    <div class="landing-benefit-card">
+                        <div class="landing-benefit-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                        </div>
+                        <h3>Dashboard em tempo real</h3>
+                        <p>Acompanhe KPIs, gráficos semanais, ticket médio e taxa de conversão com atualização automática.</p>
+                    </div>
+                    <div class="landing-benefit-card">
+                        <div class="landing-benefit-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                        </div>
+                        <h3>Saque quando quiser</h3>
+                        <p>Solicite saques diretamente pelo painel para qualquer chave Pix, sem burocracia ou prazo mínimo.</p>
+                    </div>
+                    <div class="landing-benefit-card">
+                        <div class="landing-benefit-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <h3>Segurança de ponta</h3>
+                        <p>Webhooks assinados com HMAC-SHA256, autenticação JWT e rate limiting em todas as rotas críticas.</p>
+                    </div>
+                    <div class="landing-benefit-card">
+                        <div class="landing-benefit-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <h3>Multi-lojista nativo</h3>
+                        <p>Gerencie múltiplos sellers com taxas individuais configuráveis e saldos isolados por conta.</p>
+                    </div>
+                    <div class="landing-benefit-card">
+                        <div class="landing-benefit-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                        </div>
+                        <h3>Reembolsos simplificados</h3>
+                        <p>Emita reembolsos totais direto pelo painel, com registro automático no ledger e notificação ao lojista.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== TAXAS ===== -->
+            <section id="taxas" class="landing-section">
+                <div class="landing-section-header">
+                    <span class="landing-section-tag">Preços</span>
+                    <h2>Simples e transparente</h2>
+                    <p>Sem mensalidade, sem surpresa. Você paga apenas quando vende.</p>
+                </div>
+                <div class="landing-pricing-table">
+                    <div class="landing-pricing-row">
+                        <span class="label">Taxa por transação aprovada</span>
+                        <span class="value highlight">5%</span>
+                    </div>
+                    <div class="landing-pricing-row">
+                        <span class="label">Mensalidade</span>
+                        <span class="value green">Grátis</span>
+                    </div>
+                    <div class="landing-pricing-row">
+                        <span class="label">Taxa de cadastro</span>
+                        <span class="value green">Grátis</span>
+                    </div>
+                    <div class="landing-pricing-row">
+                        <span class="label">Taxa de saque Pix</span>
+                        <span class="value green">Grátis</span>
+                    </div>
+                    <div class="landing-pricing-row">
+                        <span class="label">Contrato de fidelidade</span>
+                        <span class="value green">Nenhum</span>
+                    </div>
+                    <div class="landing-pricing-row">
+                        <span class="label">Taxa por cobrança expirada ou pendente</span>
+                        <span class="value green">R$ 0,00</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== INTEGRAÇÕES ===== -->
+            <section id="integracoes" class="landing-section">
+                <div class="landing-section-header">
+                    <span class="landing-section-tag">Desenvolvedor</span>
+                    <h2>Integre em minutos</h2>
+                    <p>REST API limpa, webhooks confiáveis e exemplos prontos para o seu bot ou e-commerce.</p>
+                </div>
+                <div class="landing-integrations-grid">
+                    <div class="landing-integration-card">
+                        <span class="int-tag">REST API</span>
+                        <h3>API simples e poderosa</h3>
+                        <p>Autentique com sua API Key, crie cobranças Pix e receba QR code + código copia e cola em uma única chamada.</p>
+                    </div>
+                    <div class="landing-integration-card">
+                        <span class="int-tag">WEBHOOKS</span>
+                        <h3>Notificações em tempo real</h3>
+                        <p>Receba eventos <code style="font-size:12px;color:var(--accent);background:var(--accent-glow);padding:2px 6px;border-radius:4px;">charge.paid</code> assinados com HMAC-SHA256 assim que o pagamento for confirmado.</p>
+                    </div>
+                    <div class="landing-integration-card">
+                        <span class="int-tag">TELEGRAM</span>
+                        <h3>Bot nativo</h3>
+                        <p>Conecte seu bot Telegram e receba alertas de pagamentos, saques e erros diretamente no seu grupo ou canal.</p>
+                    </div>
+                    <div class="landing-integration-card">
+                        <span class="int-tag">SANDBOX</span>
+                        <h3>Teste sem risco</h3>
+                        <p>Ambiente de sandbox integrado ao painel admin. Simule pagamentos e valide seu fluxo antes de ir a produção.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== FOOTER CTA ===== -->
+            <div class="landing-footer-cta">
+                <h2>Pronto para começar?</h2>
+                <p>Crie sua conta grátis e comece a receber via Pix hoje mesmo.</p>
+                <button class="landing-btn-primary lg" onclick="document.querySelector('[data-tab=register]').click(); document.querySelector('.login-container').scrollIntoView({behavior:'smooth'})">Criar Conta Grátis</button>
+            </div>
+
         </div>
     </div>
 

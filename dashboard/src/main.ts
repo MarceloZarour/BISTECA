@@ -97,6 +97,7 @@ function navigateTo(page: string) {
   if (page === 'bistecos') loadBistecos();
   if (page === 'settings') loadSettings();
   if (page === 'sandbox') loadSandbox();
+  if (page === 'api') loadApiPage();
 }
 
 // =========================================
@@ -206,6 +207,9 @@ function loginSuccess() {
 
   const sandboxNav = document.querySelector('.nav-item[data-page="sandbox"]') as HTMLElement;
   if (sandboxNav) sandboxNav.style.display = isAdmin ? 'flex' : 'none';
+
+  const apiNav = document.querySelector('.nav-item[data-page="api"]') as HTMLElement;
+  if (apiNav) apiNav.style.display = isAdmin ? 'none' : 'flex';
 
   navigateTo('overview');
 }
@@ -710,6 +714,13 @@ function initMerchantForm() {
 // =========================================
 // SETTINGS
 // =========================================
+function loadApiPage() {
+  api('/api/v1/auth/me').then(res => {
+    const el = $('#api-page-key-prefix');
+    if (el) el.textContent = `${res.api_key_prefix}••••••••••••••••••••••••••••••`;
+  }).catch(() => {});
+}
+
 function loadSettings() {
   const rawKey = window.sessionStorage.getItem('temp_raw_api_key');
 

@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
-  <script type="module" crossorigin src="/assets/index-KiIQXXdO.js"></script>
+  <script type="module" crossorigin src="/assets/index-CwykCRQ4.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-up6i5SMb.css">
 </head>
 
@@ -570,6 +570,14 @@ app = Flask(__name__)
                         <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
                     </svg>
                     <span>Sandbox</span>
+                </a>
+                <a href="#" class="nav-item" data-page="api">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6" />
+                        <polyline points="8 6 2 12 8 18" />
+                    </svg>
+                    <span>API</span>
                 </a>
                 <a href="#" class="nav-item" data-page="settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -1255,6 +1263,219 @@ app = Flask(__name__)
                         <p id="telegram-result" class="payout-result" style="margin-top:0.5rem;"></p>
                     </div>
                 </div>
+            </section>
+
+            <!-- ==================== PAGE: API ==================== -->
+            <section id="page-api" class="page">
+                <header class="page-header">
+                    <h2 class="page-title">Integração via API</h2>
+                    <p class="page-subtitle">Como conectar seu bot de vendas ao BISTECA</p>
+                </header>
+
+                <!-- Banner com API key do usuário -->
+                <div class="card" style="margin-bottom:24px;background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(59,130,246,0.05));border-color:rgba(139,92,246,0.2);">
+                    <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+                        <div>
+                            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Sua API Key (prefixo)</p>
+                            <code id="api-page-key-prefix" style="font-size:14px;color:var(--accent);font-family:Consolas,monospace;">—</code>
+                        </div>
+                        <button class="btn-secondary" onclick="document.querySelector('.nav-item[data-page=settings]').click()" style="font-size:13px;">
+                            ⚙️ Gerenciar em Configurações
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tutorial-steps">
+
+                    <!-- PASSO 1 -->
+                    <div class="tutorial-step">
+                        <div class="tutorial-step-left">
+                            <div class="step-circle">1</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="tutorial-step-right">
+                            <div class="tutorial-step-card">
+                                <h3>Sua API Key</h3>
+                                <p>Você já tem uma API Key gerada no momento do cadastro. Acesse <strong>Configurações</strong> no menu para visualizar o prefixo ou gerar uma nova chave. Salve a chave como variável de ambiente — ela aparece apenas uma vez.</p>
+                                <div class="code-block" style="margin-top:16px;">
+                                    <div class="code-label"><span>Variável de ambiente no seu bot</span><button class="code-copy-btn" onclick="copyCode(this)">Copiar</button></div>
+<pre><span class="tk-c"># .env do seu bot</span>
+API_KEY=<span class="tk-s">bst_live_sua_chave_completa_aqui</span>
+BASE_URL=<span class="tk-s">https://sua-api.railway.app</span></pre>
+                                </div>
+                                <div class="tut-tip tut-tip-success" style="margin-top:12px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                                    Configure também a <strong>Webhook URL</strong> em Configurações — é ela que avisa seu bot quando o pagamento for confirmado (Passo 4).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASSO 2 -->
+                    <div class="tutorial-step">
+                        <div class="tutorial-step-left">
+                            <div class="step-circle">2</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="tutorial-step-right">
+                            <div class="tutorial-step-card">
+                                <h3>Crie uma cobrança Pix pelo bot</h3>
+                                <p>Quando um cliente quiser comprar, seu bot chama a API para gerar o Pix. Guarde o <code class="tut-code">correlationID</code> retornado — ele é o elo entre o pagamento e o cliente.</p>
+                                <div class="code-block">
+                                    <div class="code-label"><span>Python — criar cobrança</span><button class="code-copy-btn" onclick="copyCode(this)">Copiar</button></div>
+<pre><span class="tk-c"># pip install requests</span>
+<span class="tk-kw">import</span> requests, os
+
+API_KEY = os.getenv(<span class="tk-s">"API_KEY"</span>)
+BASE_URL = os.getenv(<span class="tk-s">"BASE_URL"</span>)
+
+<span class="tk-c"># Guarda quem está aguardando pagamento</span>
+pedidos_pendentes = {}
+
+<span class="tk-kw">def</span> <span class="tk-fn">criar_cobranca</span>(valor_centavos, telegram_user_id):
+    resp = requests.post(
+        <span class="tk-s">f"{BASE_URL}/api/v1/charges"</span>,
+        headers={
+            <span class="tk-s">"Authorization"</span>: API_KEY,  <span class="tk-c"># sem "Bearer"</span>
+            <span class="tk-s">"Content-Type"</span>: <span class="tk-s">"application/json"</span>,
+        },
+        json={
+            <span class="tk-s">"value"</span>: valor_centavos,  <span class="tk-c"># centavos — R$ 29,90 = 2990</span>
+            <span class="tk-s">"expiresIn"</span>: <span class="tk-n">3600</span>,        <span class="tk-c"># expira em 1 hora</span>
+        }
+    )
+    cobranca = resp.json()
+    pedidos_pendentes[cobranca[<span class="tk-s">"correlationID"</span>]] = telegram_user_id
+    <span class="tk-kw">return</span> cobranca</pre>
+                                </div>
+                                <div class="code-block" style="margin-top:12px;">
+                                    <div class="code-label"><span>Resposta da API</span><span class="lang-badge">JSON</span></div>
+<pre>{
+  <span class="tk-k">"correlationID"</span>: <span class="tk-s">"3f8a1b2c-4d5e-6f7a-8b9c-0d1e2f3a4b5c"</span>,
+  <span class="tk-k">"brCode"</span>:       <span class="tk-s">"00020126580014BR.GOV.BCB.PIX..."</span>,  <span class="tk-c">← PIX copia e cola</span>
+  <span class="tk-k">"qrCodeImage"</span>:  <span class="tk-s">"https://cdn.woovi.com/qr/..."</span>,     <span class="tk-c">← imagem QR</span>
+  <span class="tk-k">"value"</span>:        <span class="tk-n">2990</span>,
+  <span class="tk-k">"expiresAt"</span>:    <span class="tk-s">"2025-01-15T15:00:00Z"</span>
+}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASSO 3 -->
+                    <div class="tutorial-step">
+                        <div class="tutorial-step-left">
+                            <div class="step-circle">3</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="tutorial-step-right">
+                            <div class="tutorial-step-card">
+                                <h3>Envie o Pix para o cliente no Telegram</h3>
+                                <p>Use o <code class="tut-code">brCode</code> (copia e cola) e o <code class="tut-code">qrCodeImage</code> para mostrar o pagamento pro cliente. Ele paga direto pelo app do banco.</p>
+                                <div class="code-block">
+                                    <div class="code-label"><span>Python — enviar ao cliente</span><button class="code-copy-btn" onclick="copyCode(this)">Copiar</button></div>
+<pre><span class="tk-c"># python-telegram-bot v20+</span>
+<span class="tk-kw">async def</span> <span class="tk-fn">cmd_comprar</span>(update, context):
+    user_id = update.effective_user.id
+    cobranca = criar_cobranca(<span class="tk-n">2990</span>, user_id)  <span class="tk-c"># R$ 29,90</span>
+
+    <span class="tk-kw">await</span> update.message.reply_text(
+        <span class="tk-s">f"💳 *Pague R$ 29,90 via PIX*\n\n"</span>
+        <span class="tk-s">f"Copie o código abaixo e cole no seu banco:\n\n"</span>
+        <span class="tk-s">f"`{cobranca['brCode']}`"</span>,
+        parse_mode=<span class="tk-s">"Markdown"</span>
+    )
+    <span class="tk-kw">await</span> update.message.reply_photo(
+        photo=cobranca[<span class="tk-s">"qrCodeImage"</span>],
+        caption=<span class="tk-s">"📱 Ou escaneie o QR Code"</span>
+    )
+    <span class="tk-kw">await</span> update.message.reply_text(<span class="tk-s">"⏳ Aguardando confirmação..."</span>)</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASSO 4 -->
+                    <div class="tutorial-step">
+                        <div class="tutorial-step-left">
+                            <div class="step-circle">4</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="tutorial-step-right">
+                            <div class="tutorial-step-card">
+                                <h3>Configure o Webhook em Configurações</h3>
+                                <p>Vá em <strong>Configurações → Webhook URL</strong> e coloque o endereço público do seu servidor. O BISTECA vai fazer um POST nessa URL toda vez que um pagamento for confirmado.</p>
+                                <div class="code-block">
+                                    <div class="code-label"><span>Formato da URL</span></div>
+<pre>https://meu-bot.railway.app<span class="tk-u">/webhook/pix</span>
+
+<span class="tk-c"># Regras:
+# ✅ Precisa ser HTTPS e acessível pela internet
+# ✅ Deve responder HTTP 200 em até 5 segundos
+# ✅ O BISTECA retenta automaticamente se falhar
+# 🔧 Desenvolvendo local? Use: ngrok http 3000</span></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASSO 5 -->
+                    <div class="tutorial-step">
+                        <div class="tutorial-step-left">
+                            <div class="step-circle">5</div>
+                            <div class="step-line" style="background:transparent;"></div>
+                        </div>
+                        <div class="tutorial-step-right">
+                            <div class="tutorial-step-card">
+                                <h3>Receba a confirmação e libere o grupo VIP</h3>
+                                <p>Quando o pagamento for confirmado, o BISTECA posta na sua URL o <code class="tut-code">correlationID</code> da cobrança. Seu bot identifica qual cliente pagou e libera o acesso automaticamente.</p>
+                                <div class="code-block">
+                                    <div class="code-label"><span>Payload recebido no webhook</span><span class="lang-badge">JSON</span></div>
+<pre>{
+  <span class="tk-k">"event"</span>:     <span class="tk-s">"charge.paid"</span>,
+  <span class="tk-k">"data"</span>: {
+    <span class="tk-k">"correlationID"</span>: <span class="tk-s">"3f8a1b2c-4d5e-6f7a-8b9c-0d1e2f3a4b5c"</span>,
+    <span class="tk-k">"value"</span>:         <span class="tk-n">2990</span>,
+    <span class="tk-k">"paidAt"</span>:        <span class="tk-s">"2025-01-15T14:32:10.000Z"</span>
+  },
+  <span class="tk-k">"timestamp"</span>: <span class="tk-s">"2025-01-15T14:32:10.123Z"</span>
+}</pre>
+                                </div>
+                                <div class="code-block" style="margin-top:12px;">
+                                    <div class="code-label"><span>Python + Flask — handler do webhook</span><button class="code-copy-btn" onclick="copyCode(this)">Copiar</button></div>
+<pre><span class="tk-kw">from</span> flask <span class="tk-kw">import</span> Flask, request, jsonify
+<span class="tk-kw">import</span> asyncio
+
+app = Flask(__name__)
+
+@app.route(<span class="tk-s">"/webhook/pix"</span>, methods=[<span class="tk-s">"POST"</span>])
+<span class="tk-kw">def</span> <span class="tk-fn">webhook_pix</span>():
+    payload = request.json
+
+    <span class="tk-kw">if</span> payload.get(<span class="tk-s">"event"</span>) == <span class="tk-s">"charge.paid"</span>:
+        correlation_id = payload[<span class="tk-s">"data"</span>][<span class="tk-s">"correlationID"</span>]
+
+        user_id = pedidos_pendentes.pop(correlation_id, <span class="tk-kw">None</span>)
+        <span class="tk-kw">if</span> user_id:
+            <span class="tk-c"># Adiciona ao grupo VIP do Telegram</span>
+            asyncio.run(bot.approve_chat_join_request(GRUPO_VIP_ID, user_id))
+            asyncio.run(bot.send_message(
+                chat_id=user_id,
+                text=<span class="tk-s">"✅ Pagamento confirmado! Bem-vindo ao VIP! 🎉"</span>
+            ))
+
+    <span class="tk-c"># SEMPRE responda 200 — senão o BISTECA vai retentar</span>
+    <span class="tk-kw">return</span> jsonify({<span class="tk-s">"ok"</span>: <span class="tk-kw">True</span>}), <span class="tk-n">200</span></pre>
+                                </div>
+                                <div class="tut-tip tut-tip-success" style="margin-top:16px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                                    Fluxo completo: cliente pede → bot gera PIX → cliente paga → BISTECA avisa o bot → bot libera o grupo. Tudo automático!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /tutorial-steps -->
             </section>
 
         </main>

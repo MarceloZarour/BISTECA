@@ -107,14 +107,19 @@ async function handleChargeCompleted(correlationId, payload) {
 
     // 4b) Notifica bot de vendas Telegram (cobranças geradas pelo bot)
     if (charge.bot_chat_id) {
+        console.log(`[Worker] Enviando confirmação Telegram para chatId ${charge.bot_chat_id}`);
         const settingRows = await db('platform_settings').whereIn('key', ['bot_token', 'bot_msg_success']);
         const s = Object.fromEntries(settingRows.map(r => [r.key, r.value]));
-        if (s.bot_token && s.bot_msg_success) {
+        if (s.bot_token) {
+            const msg = s.bot_msg_success || '✅ Pagamento confirmado! Obrigado pela compra. Você receberá o acesso em instantes. 🎉';
             fetch(`https://api.telegram.org/bot${s.bot_token}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: charge.bot_chat_id, text: s.bot_msg_success, parse_mode: 'HTML' }),
-            }).catch(e => console.error('[Worker] Falha ao notificar Telegram:', e.message));
+                body: JSON.stringify({ chat_id: charge.bot_chat_id, text: msg, parse_mode: 'HTML' }),
+            }).then(r => console.log(`[Worker] Telegram notificado: ${r.status}`))
+              .catch(e => console.error('[Worker] Falha ao notificar Telegram:', e.message));
+        } else {
+            console.warn('[Worker] bot_token não configurado — notificação Telegram ignorada');
         }
     }
 
@@ -163,11 +168,12 @@ async function handleChargeExpired(correlationId) {
     if (charge?.bot_chat_id) {
         const settingRows = await db('platform_settings').whereIn('key', ['bot_token', 'bot_msg_expired']);
         const s = Object.fromEntries(settingRows.map(r => [r.key, r.value]));
-        if (s.bot_token && s.bot_msg_expired) {
+        if (s.bot_token) {
+            const msg = s.bot_msg_expired || '⌛ Seu PIX expirou. Envie /start para gerar um novo código.';
             fetch(`https://api.telegram.org/bot${s.bot_token}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: charge.bot_chat_id, text: s.bot_msg_expired, parse_mode: 'HTML' }),
+                body: JSON.stringify({ chat_id: charge.bot_chat_id, text: msg, parse_mode: 'HTML' }),
             }).catch(e => console.error('[Worker] Falha ao notificar Telegram:', e.message));
         }
     }

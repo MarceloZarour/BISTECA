@@ -14,59 +14,133 @@
 </head>
 
 <body>
-    <!-- Login Screen -->
-    <div id="login-screen" class="screen active">
-        <div class="login-container">
-            <div class="login-logo">
-                <h1 class="login-title">🥩 BISTECA</h1>
-                <p class="login-subtitle">Painel do Bisteco</p>
-            </div>
-            <div class="auth-tabs">
-                <button class="auth-tab active" data-tab="login">Entrar</button>
-                <button class="auth-tab" data-tab="register">Criar Conta</button>
-            </div>
+    <!-- Login Screen as Landing Page -->
+    <div id="login-screen" class="screen active login-landing">
+        <div class="landing-container">
+            <!-- Header -->
+            <header class="landing-header">
+                <div class="landing-logo">🥩 BISTECA</div>
+                <nav class="landing-nav">
+                    <a href="#">Benefícios</a>
+                    <a href="#">Taxas</a>
+                    <a href="#">Integrações</a>
+                </nav>
+                <div class="landing-actions">
+                    <button class="landing-btn-outline"
+                        onclick="document.querySelector('[data-tab=login]').click()">Fazer Login</button>
+                    <button class="landing-btn-primary"
+                        onclick="document.querySelector('[data-tab=register]').click()">Criar Conta</button>
+                </div>
+            </header>
 
-            <!-- Formulário de Login -->
-            <form id="login-form" class="auth-form active">
-                <div class="input-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" required />
+            <!-- Main Content -->
+            <div class="landing-main">
+                <!-- Left Side: Copywriting -->
+                <div class="landing-left">
+                    <div class="landing-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg>
+                        O GATEWAY DO FUTURO
+                    </div>
+                    <h1 class="landing-title">A PLATAFORMA<br>COMPLETA QUE<br><span
+                            class="landing-highlight">ACELERA</span><br>SUA EMPRESA.</h1>
+                    <p class="landing-desc">Do online ao físico: receba via Pix e expanda sua operação de ponta a ponta
+                        com liquidação ultrarrápida e taxas que cabem no seu negócio.</p>
+                    <div class="landing-cta-group">
+                        <button class="landing-btn-primary lg"
+                            onclick="document.querySelector('[data-tab=register]').click()">Começar Agora</button>
+                        <button class="landing-btn-outline lg">Falar com especialista</button>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="login-password">Senha</label>
-                    <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"
-                        required />
-                </div>
-                <button type="submit" id="login-btn" class="btn-primary" style="margin-top: 8px;">
-                    <span>Entrar no Painel</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                </button>
-                <p id="login-error" class="login-error"></p>
-            </form>
 
-            <!-- Formulário de Cadastro -->
-            <form id="register-form" class="auth-form">
-                <div class="input-group">
-                    <label for="register-name">Nome da Loja</label>
-                    <input type="text" id="register-name" placeholder="Sua Loja" autocomplete="organization" required />
+                <!-- Right Side: Floating Login Form -->
+                <div class="landing-right">
+
+                    <div class="floating-pill pill-1">
+                        <div class="pill-icon success">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                        </div>
+                        <div class="pill-text">
+                            <span class="pill-title">Venda Realizada!</span>
+                            <span class="pill-sub" style="color: var(--success);">+ R$ 849,90</span>
+                        </div>
+                    </div>
+
+                    <div class="floating-pill pill-2">
+                        <div class="pill-icon accent">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                            </svg>
+                        </div>
+                        <div class="pill-text">
+                            <span class="pill-title">SAQUE PIX</span>
+                            <span class="pill-sub" style="color: var(--text-tertiary);">Em processamento</span>
+                        </div>
+                    </div>
+
+                    <div class="login-container">
+                        <div class="login-logo">
+                            <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 2px;">Acesso ao Painel</h2>
+                            <p style="color: var(--text-secondary); font-size: 13px;">Gerencie suas vendas e saques</p>
+                        </div>
+                        <div class="auth-tabs">
+                            <button class="auth-tab active" data-tab="login">Entrar</button>
+                            <button class="auth-tab" data-tab="register">Criar Conta</button>
+                        </div>
+
+                        <!-- Formulário de Login -->
+                        <form id="login-form" class="auth-form active">
+                            <div class="input-group">
+                                <label for="login-email">Email</label>
+                                <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email"
+                                    required />
+                            </div>
+                            <div class="input-group">
+                                <label for="login-password">Senha</label>
+                                <input type="password" id="login-password" placeholder="••••••••"
+                                    autocomplete="current-password" required />
+                            </div>
+                            <button type="submit" id="login-btn" class="btn-primary" style="margin-top: 8px;">
+                                <span>Entrar no Painel</span>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                            <p id="login-error" class="login-error"></p>
+                        </form>
+
+                        <!-- Formulário de Cadastro -->
+                        <form id="register-form" class="auth-form">
+                            <div class="input-group">
+                                <label for="register-name">Nome da Loja</label>
+                                <input type="text" id="register-name" placeholder="Sua Loja" autocomplete="organization"
+                                    required />
+                            </div>
+                            <div class="input-group">
+                                <label for="register-email">Email</label>
+                                <input type="email" id="register-email" placeholder="seu@email.com" autocomplete="email"
+                                    required />
+                            </div>
+                            <div class="input-group">
+                                <label for="register-password">Senha (mín 6 caracteres)</label>
+                                <input type="password" id="register-password" placeholder="••••••••"
+                                    autocomplete="new-password" minlength="6" required />
+                            </div>
+                            <button type="submit" id="register-btn" class="btn-primary" style="margin-top: 8px;">
+                                <span>Criar Minha Conta</span>
+                            </button>
+                            <p id="register-error" class="login-error"></p>
+                        </form>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="register-email">Email</label>
-                    <input type="email" id="register-email" placeholder="seu@email.com" autocomplete="email" required />
-                </div>
-                <div class="input-group">
-                    <label for="register-password">Senha (mín 6 caracteres)</label>
-                    <input type="password" id="register-password" placeholder="••••••••" autocomplete="new-password"
-                        minlength="6" required />
-                </div>
-                <button type="submit" id="register-btn" class="btn-primary" style="margin-top: 8px;">
-                    <span>Criar Minha Conta</span>
-                </button>
-                <p id="register-error" class="login-error"></p>
-            </form>
+            </div>
         </div>
     </div>
 

@@ -82,69 +82,327 @@ select {
     opacity: 1;
 }
 
-#login-screen {
+/* =========================================
+   Landing Page / Login V2
+   ========================================= */
+#login-screen.login-landing {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     min-height: 100vh;
     background: var(--bg-primary);
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center top;
 }
 
-#login-screen::before {
+#login-screen.login-landing::before {
     content: '';
     position: absolute;
-    top: -40%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+    top: -20%;
+    left: 10%;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
     pointer-events: none;
+    z-index: 0;
 }
 
-.login-container {
+.landing-container {
     width: 100%;
-    max-width: 380px;
-    padding: 0 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
     position: relative;
-    z-index: 1;
-    animation: fadeUp 0.8s var(--ease) both;
-}
-
-@keyframes fadeUp {
-    from {
-        opacity: 0;
-        transform: translateY(24px) scale(0.96);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.login-logo {
-    text-align: center;
-    margin-bottom: 48px;
-}
-
-.login-title {
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-}
-
-.login-subtitle {
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin-top: 6px;
-}
-
-.login-form {
+    z-index: 10;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    min-height: 100vh;
+}
+
+.landing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 0;
+    width: 100%;
+    animation: fadeUp 0.6s var(--ease) both;
+}
+
+.landing-logo {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+}
+
+.landing-nav {
+    display: flex;
+    gap: 32px;
+}
+
+.landing-nav a {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+}
+
+.landing-nav a:hover {
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .landing-nav {
+        display: none;
+    }
+}
+
+.landing-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.landing-btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.landing-btn-outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.landing-btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+}
+
+.landing-btn-primary:hover {
+    background: #7c3aed;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.landing-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    padding: 40px 0 80px;
+    gap: 60px;
+}
+
+@media (max-width: 1024px) {
+    .landing-main {
+        flex-direction: column;
+        text-align: center;
+        gap: 40px;
+        padding: 40px 0;
+    }
+
+    .landing-left {
+        margin: 0 auto;
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .landing-cta-group {
+        justify-content: center;
+    }
+}
+
+.landing-left {
+    flex: 1;
+    max-width: 580px;
+    animation: fadeUp 0.8s var(--ease) 0.1s both;
+}
+
+.landing-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.landing-title {
+    font-size: clamp(40px, 5vw, 64px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+}
+
+.landing-highlight {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.landing-desc {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+    max-width: 90%;
+}
+
+.landing-cta-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.landing-btn-primary.lg,
+.landing-btn-outline.lg {
+    padding: 16px 32px;
+    font-size: 15px;
+}
+
+.landing-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+    width: 100%;
+    animation: fadeUp 0.8s var(--ease) 0.2s both;
+}
+
+@media (max-width: 1024px) {
+    .landing-right {
+        justify-content: center;
+    }
+
+    .floating-pill.pill-1 {
+        display: none !important;
+    }
+}
+
+/* Floating mockups */
+.floating-pill {
+    position: absolute;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    padding: 14px 24px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+    z-index: 20;
+    animation: float 6s ease-in-out infinite;
+    backdrop-filter: blur(10px);
+}
+
+.floating-pill.pill-1 {
+    top: -20px;
+    left: -40px;
+    animation-delay: 0s;
+}
+
+.floating-pill.pill-2 {
+    bottom: 20px;
+    right: -30px;
+    animation-delay: 2s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+.pill-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pill-icon.success {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.pill-icon.accent {
+    background: var(--accent-glow);
+    color: var(--accent);
+}
+
+.pill-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.pill-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.pill-sub {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Login Box overrides for Landing */
+.login-container {
+    background: rgba(17, 17, 20, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    position: relative;
+    z-index: 10;
 }
 
 .login-error {

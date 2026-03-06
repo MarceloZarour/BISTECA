@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BISTECA · Painel do Bisteco</title>
+    <meta name="description" content="Painel do Bisteco BISTECA — Gerencie vendas, saldo e saques Pix." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+</head>
+
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="login-logo">
+                <h1 class="login-title">🥩 BISTECA</h1>
+                <p class="login-subtitle">Painel do Bisteco</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <label for="api-key-input">Chave de API</label>
+                    <input type="password" id="api-key-input" placeholder="bst_live_..." autocomplete="off" />
+                </div>
+                <button type="submit" id="login-btn" class="btn-primary">
+                    <span>Entrar</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
+                <p id="login-error" class="login-error"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-screen" class="screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span class="sidebar-brand">🥩 BISTECA</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="overview">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                    <span>Visão Geral</span>
+                </a>
+                <a href="#" class="nav-item" data-page="financeiro">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23" />
+                        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                    </svg>
+                    <span>Financeiro</span>
+                </a>
+                <a href="#" class="nav-item" data-page="reembolsos">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10" />
+                        <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+                    </svg>
+                    <span>Reembolsos</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="logout-btn" class="nav-item logout">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                    </svg>
+                    <span>Sair</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+
+            <!-- ==================== OVERVIEW ==================== -->
+            <section id="page-overview" class="page active">
+                <header class="page-header">
+                    <div>
+                        <h2 class="page-title">Visão Geral</h2>
+                        <p class="page-subtitle" id="greeting"></p>
+                    </div>
+                </header>
+
+                <!-- KPI Row 1 -->
+                <div class="kpi-grid kpi-4">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Vendas</div>
+                        <div class="kpi-value" id="kpi-vendas">R$ 0,00</div>
+                        <div class="kpi-delta negative" id="kpi-vendas-delta">-100.0% vs mês anterior</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Ticket Médio</div>
+                        <div class="kpi-value" id="kpi-ticket">R$ 0,00</div>
+                        <div class="kpi-delta negative" id="kpi-ticket-delta">-100.0% vs mês anterior</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Pix Pagos</div>
+                        <div class="kpi-value" id="kpi-pix-pagos">0</div>
+                        <div class="kpi-delta negative" id="kpi-pix-delta">-100.0% vs mês anterior</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Vendas Hoje</div>
+                        <div class="kpi-value" id="kpi-vendas-hoje">R$ 0,00</div>
+                        <div class="kpi-delta negative" id="kpi-hoje-delta">-100.0% vs mês anterior</div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Saúde + Revenue Chart -->
+                <div class="content-row">
+                    <!-- Saúde da Conta -->
+                    <div class="card card-sm">
+                        <div class="card-header">
+                            <h3>Saúde da conta</h3>
+                        </div>
+                        <div class="card-body health-body">
+                            <div class="health-badge" id="health-status">Ótimo</div>
+                            <div class="health-rate" id="health-rate">1.75%</div>
+                            <div class="health-bar">
+                                <div class="health-fill" id="health-fill" style="width:98%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receita Chart -->
+                    <div class="card card-lg">
+                        <div class="card-header">
+                            <div>
+                                <h3>Receita</h3>
+                                <span class="card-meta" id="chart-date">05/03/2026</span>
+                            </div>
+                            <span class="live-badge">● Atualização em tempo real</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-value" id="chart-total">R$ 0,00</div>
+                            <canvas id="revenue-chart"></canvas>
+                            <div class="chart-empty" id="chart-empty">Nenhum dado disponível</div>
+                        </div>
+                    </div>
+
+                    <!-- Conversão -->
+                    <div class="card card-sm">
+                        <div class="card-header">
+                            <h3>Taxa de conversão</h3>
+                        </div>
+                        <div class="card-body conversion-body">
+                            <div class="conversion-value" id="conv-rate">0%</div>
+                            <div class="conversion-label">PIX</div>
+                            <div class="conversion-ring">
+                                <svg viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.04)"
+                                        stroke-width="8" />
+                                    <circle cx="50" cy="50" r="42" fill="none" stroke="url(#ring-grad)" stroke-width="8"
+                                        stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round"
+                                        id="conv-ring-fill" />
+                                    <defs>
+                                        <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="#8B5CF6" />
+                                            <stop offset="100%" stop-color="#3B82F6" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Progresso + Vendas semana + Ticket semana -->
+                <div class="content-row">
+                    <!-- Progresso Recompensas -->
+                    <div class="card card-sm">
+                        <div class="card-header">
+                            <h3>Progresso de recompensas</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress-label">Progresso atual</div>
+                            <div class="progress-value" id="rewards-progress">R$ 56.086 / 100K</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="rewards-fill" style="width: 56%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vendas / Dia da semana -->
+                    <div class="card card-md">
+                        <div class="card-header">
+                            <div>
+                                <h3>Vendas / Dia da semana</h3>
+                                <span class="card-meta" id="week-sales-summary">Total da semana: R$ 0,00 • Média diária:
+                                    R$ 0,00</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="week-sales-chart"></canvas>
+                            <div class="chart-empty" id="week-sales-empty">Nenhum dado disponível para o período
+                                selecionado</div>
+                        </div>
+                    </div>
+
+                    <!-- Ticket Médio / Dia da semana -->
+                    <div class="card card-md">
+                        <div class="card-header">
+                            <div>
+                                <h3>Ticket Médio / Dia da semana</h3>
+                                <span class="card-meta" id="week-ticket-summary">Total da semana: R$ 0,00 • Média
+                                    diária: R$ 0,00</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="week-ticket-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== FINANCEIRO ==================== -->
+            <section id="page-financeiro" class="page">
+                <header class="page-header">
+                    <div>
+                        <h2 class="page-title">Financeiro</h2>
+                        <p class="page-subtitle">Gerencie saldo, saques e transações</p>
+                    </div>
+                </header>
+
+                <!-- Sub-tabs -->
+                <div class="sub-tabs">
+                    <button class="sub-tab active" data-subtab="saldo">Saldo</button>
+                    <button class="sub-tab" data-subtab="transacoes">Transações</button>
+                </div>
+
+                <!-- Sub-tab: Saldo -->
+                <div id="subtab-saldo" class="subtab-content active">
+                    <div class="kpi-grid kpi-3">
+                        <div class="kpi-card balance-accent">
+                            <div class="kpi-label">Disponível para Saque</div>
+                            <div class="kpi-value" id="fin-available">R$ 0,00</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Saque Pendente de Aprovação</div>
+                            <div class="kpi-value" id="fin-pending">R$ 0,00</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Saque Bloqueado</div>
+                            <div class="kpi-value" id="fin-blocked">R$ 0,00</div>
+                        </div>
+                    </div>
+
+                    <!-- Payout form + History -->
+                    <div class="payout-grid">
+                        <div class="card payout-form-card">
+                            <div class="card-header">
+                                <h3>Novo Saque</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="payout-form">
+                                    <div class="input-group">
+                                        <label for="payout-amount">Valor (centavos)</label>
+                                        <input type="number" id="payout-amount" placeholder="1000 = R$ 10,00"
+                                            min="100" />
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="payout-pixkey">Chave Pix</label>
+                                        <input type="text" id="payout-pixkey"
+                                            placeholder="CPF, email, telefone ou aleatória" />
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="payout-pixtype">Tipo da Chave</label>
+                                        <select id="payout-pixtype">
+                                            <option value="CPF">CPF</option>
+                                            <option value="CNPJ">CNPJ</option>
+                                            <option value="EMAIL">Email</option>
+                                            <option value="PHONE">Telefone</option>
+                                            <option value="RANDOM">Aleatória</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn-primary" id="payout-submit-btn">
+                                        <span>Solicitar Saque</span>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M5 12h14M12 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
+                                    <p id="payout-result" class="payout-result"></p>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Histórico de Saques</h3>
+                            </div>
+                            <div class="card-body">
+                                <div id="payout-history" class="tx-list"></div>
+                                <div id="payout-empty" class="empty-state">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="1.5" opacity="0.25">
+                                        <path d="M21 12V7H5a2 2 0 010-4h14v4" />
+                                        <path d="M3 5v14a2 2 0 002 2h16v-5" />
+                                        <path d="M18 12a2 2 0 000 4h4v-4h-4z" />
+                                    </svg>
+                                    <p>Nenhum saque realizado</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-tab: Transações -->
+                <div id="subtab-transacoes" class="subtab-content">
+                    <div class="card">
+                        <div class="card-body table-scroll">
+                            <table class="data-table" id="tx-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Cliente</th>
+                                        <th>CPF/CNPJ</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tx-tbody"></tbody>
+                            </table>
+                            <div id="tx-empty" class="empty-state">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5" opacity="0.25">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M8 12h8M12 8v8" />
+                                </svg>
+                                <p>Nenhuma transação encontrada</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== REEMBOLSOS ==================== -->
+            <section id="page-reembolsos" class="page">
+                <header class="page-header">
+                    <div>
+                        <h2 class="page-title">Reembolsos</h2>
+                        <p class="page-subtitle">Solicitações de devolução de pagamento</p>
+                    </div>
+                </header>
+                <div class="card">
+                    <div class="card-body table-scroll">
+                        <table class="data-table" id="refund-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cobrança</th>
+                                    <th>Cliente</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                    <th>Motivo</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody id="refund-tbody"></tbody>
+                        </table>
+                        <div id="refund-empty" class="empty-state">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5" opacity="0.25">
+                                <polyline points="1 4 1 10 7 10" />
+                                <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+                            </svg>
+                            <p>Nenhum reembolso solicitado</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== SETTINGS ==================== -->
+            <section id="page-settings" class="page">
+                <header class="page-header">
+                    <div>
+                        <h2 class="page-title">Configurações</h2>
+                        <p class="page-subtitle">Configurações da sua conta</p>
+                    </div>
+                </header>
+                <div class="settings-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>API Key</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="settings-row">
+                                <span class="settings-label">Sua chave de API</span>
+                                <code class="api-key-display" id="settings-apikey">••••••••••••••••</code>
+                            </div>
+                            <div class="settings-row">
+                                <span class="settings-label">Endpoint base</span>
+                                <code class="api-key-display">http://localhost:3000/api/v1</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Informações da Conta</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="settings-row">
+                                <span class="settings-label">Bisteco ID</span>
+                                <code class="api-key-display" id="settings-merchantid">—</code>
+                            </div>
+                            <div class="settings-row">
+                                <span class="settings-label">Nome</span>
+                                <code class="api-key-display" id="settings-name">—</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>

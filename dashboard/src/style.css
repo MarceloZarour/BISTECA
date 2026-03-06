@@ -1948,3 +1948,317 @@ canvas {
         display: none;
     }
 }
+/* =========================================
+   RESPONSIVE: Landing page mobile (<768px)
+   ========================================= */
+@media (max-width: 768px) {
+    /* Container padding */
+    .landing-container {
+        padding: 0 16px;
+    }
+
+    /* Header: hide nav actions since hero already has CTAs */
+    .landing-actions {
+        display: none;
+    }
+
+    .landing-logo {
+        font-size: 18px;
+    }
+
+    /* Hero title */
+    .landing-title {
+        font-size: 36px !important;
+        line-height: 1.1;
+    }
+
+    .landing-desc {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    /* Login form: full width */
+    .login-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 24px 20px;
+    }
+
+    /* Floating pill 2: hide on mobile */
+    .floating-pill.pill-2 {
+        display: none !important;
+    }
+
+    /* Landing sections: less vertical padding */
+    .landing-section {
+        padding: 48px 0;
+    }
+
+    .landing-section-header {
+        margin-bottom: 32px;
+    }
+
+    .landing-section-header h2 {
+        font-size: 24px;
+    }
+
+    .landing-section-header p {
+        font-size: 13px;
+    }
+
+    /* Benefits + integrations: single column */
+    .landing-benefits-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-integrations-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-benefit-card,
+    .landing-integration-card {
+        padding: 20px;
+    }
+
+    /* Pricing table */
+    .landing-pricing-row {
+        padding: 14px 20px;
+    }
+
+    .landing-pricing-row .value.highlight {
+        font-size: 16px;
+    }
+
+    .landing-pricing-row .label,
+    .landing-pricing-row .value {
+        font-size: 13px;
+    }
+
+    /* Footer CTA */
+    .landing-footer-cta {
+        padding: 40px 0;
+    }
+
+    .landing-footer-cta h2 {
+        font-size: 22px;
+    }
+
+    /* Tutorial steps */
+    .tutorial-step-card {
+        padding: 20px 16px;
+    }
+
+    .tutorial-step-card h3 {
+        font-size: 15px;
+    }
+
+    .tutorial-step-right {
+        padding-bottom: 24px;
+    }
+
+    .step-circle {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .tutorial-step-left {
+        width: 40px;
+    }
+
+    /* Code blocks */
+    .code-block pre {
+        font-size: 11px;
+        padding: 14px 14px;
+    }
+
+    .tut-tip {
+        font-size: 12px;
+    }
+
+    /* Dashboard: tables scroll */
+    .card-body {
+        overflow-x: auto;
+    }
+
+    .data-table,
+    .tx-table {
+        min-width: 520px;
+    }
+
+    /* Page-api banner */
+    #page-api .card-body {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* Bot flow diagram */
+    .bot-flow {
+        flex-direction: column;
+    }
+
+    .bot-flow-step {
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+
+    .bot-flow-arrow {
+        display: none;
+    }
+}
+
+/* =========================================
+   RESPONSIVE: Small mobile (<480px)
+   ========================================= */
+@media (max-width: 480px) {
+    .landing-title {
+        font-size: 30px !important;
+    }
+
+    .landing-cta-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .landing-btn-primary.lg,
+    .landing-btn-outline.lg {
+        text-align: center;
+        padding: 14px 20px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .landing-section-header h2 {
+        font-size: 20px;
+    }
+
+    /* Auth tabs */
+    .auth-tabs {
+        gap: 0;
+    }
+
+    /* Landing header: compact */
+    .landing-header {
+        padding: 16px 0;
+    }
+
+    /* KPIs: single column on very small */
+    .kpi-4,
+    .kpi-3 {
+        grid-template-columns: 1fr;
+    }
+
+    /* Page header on tiny screens */
+    .page-header {
+        margin-bottom: 16px;
+    }
+
+    .page-title {
+        font-size: 18px;
+    }
+
+    /* Card padding reduced */
+    .card-body {
+        padding: 16px;
+    }
+
+    .card-header {
+        padding: 14px 16px;
+    }
+
+    /* Tutorial: hide step line on mobile */
+    .step-line {
+        display: none;
+    }
+
+    .tutorial-step {
+        gap: 12px;
+    }
+}
+
+/* =========================================
+   Bot page
+   ========================================= */
+.bot-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.bot-flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    text-align: center;
+    flex: 1;
+    min-width: 100px;
+}
+
+.bot-flow-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+}
+
+.bot-flow-step p {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    max-width: 90px;
+}
+
+.bot-flow-arrow {
+    color: var(--text-tertiary);
+    font-size: 20px;
+    flex-shrink: 0;
+    padding: 0 4px;
+}
+
+.bot-msg-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bot-msg-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.bot-msg-textarea::placeholder {
+    color: var(--text-tertiary);
+}
+
+.placeholder-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-family: Consolas, monospace;
+    color: var(--accent);
+    background: var(--accent-glow);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin: 0 2px;
+}

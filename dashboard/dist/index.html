@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
-  <script type="module" crossorigin src="/assets/index-CwykCRQ4.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-up6i5SMb.css">
+  <script type="module" crossorigin src="/assets/index-DACarZgA.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CHDBYUgl.css">
 </head>
 
 <body>
@@ -570,6 +570,15 @@ app = Flask(__name__)
                         <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
                     </svg>
                     <span>Sandbox</span>
+                </a>
+                <a href="#" class="nav-item" data-page="bot">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        <line x1="12" y1="15" x2="12" y2="17"/>
+                    </svg>
+                    <span>Bot Telegram</span>
                 </a>
                 <a href="#" class="nav-item" data-page="api">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -1266,6 +1275,126 @@ app = Flask(__name__)
             </section>
 
             <!-- ==================== PAGE: API ==================== -->
+            <!-- ==================== PAGE: BOT ==================== -->
+            <section id="page-bot" class="page">
+                <header class="page-header">
+                    <h2 class="page-title">Bot de Vendas Telegram</h2>
+                    <p class="page-subtitle">Configure seu bot para criar cobranças e liberar acessos automaticamente</p>
+                </header>
+
+                <!-- Flow diagram -->
+                <div class="card" style="margin-bottom:20px;">
+                    <div class="card-body" style="padding:20px;">
+                        <div class="bot-flow">
+                            <div class="bot-flow-step">
+                                <div class="bot-flow-icon">🙋</div>
+                                <p>Cliente envia /comprar</p>
+                            </div>
+                            <div class="bot-flow-arrow">›</div>
+                            <div class="bot-flow-step">
+                                <div class="bot-flow-icon">💳</div>
+                                <p>Bot gera PIX via API</p>
+                            </div>
+                            <div class="bot-flow-arrow">›</div>
+                            <div class="bot-flow-step">
+                                <div class="bot-flow-icon">✅</div>
+                                <p>Cliente paga</p>
+                            </div>
+                            <div class="bot-flow-arrow">›</div>
+                            <div class="bot-flow-step">
+                                <div class="bot-flow-icon">📡</div>
+                                <p>BISTECA avisa o bot</p>
+                            </div>
+                            <div class="bot-flow-arrow">›</div>
+                            <div class="bot-flow-step">
+                                <div class="bot-flow-icon">🎉</div>
+                                <p>Bot libera o grupo VIP</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bot connection -->
+                <div class="card" style="margin-bottom:16px;">
+                    <div class="card-header">
+                        <h3>Conexão do Bot</h3>
+                        <span id="bot-status-badge" style="font-size:12px;color:var(--text-tertiary);">Não configurado</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="bot-config-form">
+                            <div class="settings-grid">
+                                <div class="settings-row">
+                                    <label style="min-width:160px;font-size:13px;font-weight:500;">Token do Bot</label>
+                                    <div style="flex:1;">
+                                        <input type="password" id="bot-token" placeholder="123456789:ABCDefghIJKLmno..." style="width:100%;" />
+                                        <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Obtenha em <strong>@BotFather</strong> no Telegram → /newbot</p>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <label style="min-width:160px;font-size:13px;font-weight:500;">Chat ID para Testes</label>
+                                    <div style="flex:1;">
+                                        <input type="text" id="bot-test-chat-id" placeholder="-1001234567890 ou seu user_id" style="width:100%;" />
+                                        <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Envie qualquer mensagem pro bot e veja o chat_id em <strong>@userinfobot</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;">
+                                <button type="submit" class="btn-primary">Salvar Token</button>
+                                <button type="button" class="btn-secondary" id="bot-test-btn">⚡ Testar Conexão</button>
+                            </div>
+                            <p id="bot-config-result" class="payout-result" style="margin-top:10px;"></p>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Message templates -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Mensagens do Bot</h3>
+                        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                            <span style="font-size:12px;color:var(--text-secondary);">Placeholders:</span>
+                            <span class="placeholder-badge">{valor}</span>
+                            <span class="placeholder-badge">{pix_code}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form id="bot-messages-form">
+                            <div style="display:flex;flex-direction:column;gap:20px;">
+
+                                <div class="input-group">
+                                    <label>🖐️ Boas-vindas <span style="font-size:11px;font-weight:400;color:var(--text-tertiary);">— quando o cliente envia /start</span></label>
+                                    <textarea id="bot-msg-welcome" class="bot-msg-textarea" rows="3"
+                                        placeholder="Olá! Bem-vindo ao nosso grupo VIP. Clique em /comprar para adquirir seu acesso."></textarea>
+                                </div>
+
+                                <div class="input-group">
+                                    <label>💳 Cobrança PIX <span style="font-size:11px;font-weight:400;color:var(--text-tertiary);">— enviado junto com o QR code</span></label>
+                                    <textarea id="bot-msg-charge" class="bot-msg-textarea" rows="4"
+                                        placeholder="💳 Valor: R$ {valor}&#10;&#10;Copie o código PIX abaixo e cole no seu banco:&#10;{pix_code}&#10;&#10;⏳ O código expira em 1 hora."></textarea>
+                                </div>
+
+                                <div class="input-group">
+                                    <label>✅ Pagamento Confirmado <span style="font-size:11px;font-weight:400;color:var(--text-tertiary);">— enviado automaticamente</span></label>
+                                    <textarea id="bot-msg-success" class="bot-msg-textarea" rows="3"
+                                        placeholder="✅ Pagamento confirmado! Você será adicionado ao grupo VIP em instantes. 🎉"></textarea>
+                                </div>
+
+                                <div class="input-group">
+                                    <label>⌛ PIX Expirado <span style="font-size:11px;font-weight:400;color:var(--text-tertiary);">— quando o PIX não é pago no prazo</span></label>
+                                    <textarea id="bot-msg-expired" class="bot-msg-textarea" rows="3"
+                                        placeholder="⌛ Seu PIX expirou sem pagamento. Envie /comprar para gerar um novo código."></textarea>
+                                </div>
+
+                            </div>
+                            <div style="display:flex;gap:8px;margin-top:20px;">
+                                <button type="submit" class="btn-primary">Salvar Mensagens</button>
+                            </div>
+                            <p id="bot-messages-result" class="payout-result" style="margin-top:10px;"></p>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
             <section id="page-api" class="page">
                 <header class="page-header">
                     <h2 class="page-title">Integração via API</h2>

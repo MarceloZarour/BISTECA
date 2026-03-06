@@ -98,6 +98,7 @@ function navigateTo(page: string) {
   if (page === 'settings') loadSettings();
   if (page === 'sandbox') loadSandbox();
   if (page === 'api') loadApiPage();
+  if (page === 'bot') loadBotSettings();
 }
 
 // =========================================
@@ -210,6 +211,9 @@ function loginSuccess() {
 
   const apiNav = document.querySelector('.nav-item[data-page="api"]') as HTMLElement;
   if (apiNav) apiNav.style.display = isAdmin ? 'none' : 'flex';
+
+  const botNav = document.querySelector('.nav-item[data-page="bot"]') as HTMLElement;
+  if (botNav) botNav.style.display = isAdmin ? 'flex' : 'none';
 
   navigateTo('overview');
 }
@@ -714,6 +718,110 @@ function initMerchantForm() {
 // =========================================
 // SETTINGS
 // =========================================
+// =========================================
+// BOT TELEGRAM (Admin)
+// =========================================
+async function loadBotSettings() {
+  try {
+    const res = await api('/api/v1/admin/settings');
+
+    const tokenInput = $('#bot-token') as HTMLInputElement;
+    const chatInput = $('#bot-test-chat-id') as HTMLInputElement;
+    if (tokenInput && res.bot_token) tokenInput.placeholder = `Atual: ***${res.bot_token.slice(-6)} (deixe vazio para manter)`;
+    if (chatInput && res.bot_test_chat_id) chatInput.value = res.bot_test_chat_id;
+
+    const badge = $('#bot-status-badge') as HTMLElement;
+    if (badge) {
+      if (res.bot_token) {
+        badge.textContent = '✅ Conectado';
+        badge.style.color = 'var(--success)';
+      } else {
+        badge.textContent = 'Não configurado';
+        badge.style.color = 'var(--text-tertiary)';
+      }
+    }
+
+    const fields: Record<string, string> = {
+      'bot-msg-welcome': res.bot_msg_welcome,
+      'bot-msg-charge': res.bot_msg_charge,
+      'bot-msg-success': res.bot_msg_success,
+      'bot-msg-expired': res.bot_msg_expired,
+    };
+    for (const [id, val] of Object.entries(fields)) {
+      const el = $(`#${id}`) as HTMLTextAreaElement;
+      if (el && val) el.value = val;
+    }
+  } catch (e) { /* silent */ }
+}
+
+function initBotForm() {
+  const configForm = $('#bot-config-form') as HTMLFormElement;
+  const configResult = $('#bot-config-result') as HTMLElement;
+  const testBtn = $('#bot-test-btn') as HTMLButtonElement;
+  const messagesForm = $('#bot-messages-form') as HTMLFormElement;
+  const messagesResult = $('#bot-messages-result') as HTMLElement;
+
+  if (configForm) {
+    configForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body: Record<string, string> = {};
+      const token = ($('#bot-token') as HTMLInputElement)?.value.trim();
+      const chatId = ($('#bot-test-chat-id') as HTMLInputElement)?.value.trim();
+      if (token) body.bot_token = token;
+      if (chatId) body.bot_test_chat_id = chatId;
+      if (!Object.keys(body).length) return;
+      try {
+        await api('/api/v1/admin/settings', { method: 'PATCH', body: JSON.stringify(body) });
+        configResult.textContent = '✅ Token salvo!';
+        configResult.style.color = 'var(--success)';
+        if (token) ($('#bot-token') as HTMLInputElement).value = '';
+        loadBotSettings();
+      } catch (err: any) {
+        configResult.textContent = `❌ ${err.message}`;
+        configResult.style.color = 'var(--danger)';
+      }
+      setTimeout(() => configResult.textContent = '', 4000);
+    });
+  }
+
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      testBtn.textContent = '⏳ Testando...';
+      testBtn.disabled = true;
+      try {
+        const res = await api('/api/v1/admin/bot/test-message', { method: 'POST', body: '{}' });
+        showToast(res.message || '✅ Mensagem enviada!', 'success');
+      } catch (err: any) {
+        showToast(`❌ ${err.message}`, 'error');
+      } finally {
+        testBtn.textContent = '⚡ Testar Conexão';
+        testBtn.disabled = false;
+      }
+    });
+  }
+
+  if (messagesForm) {
+    messagesForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        bot_msg_welcome: ($('#bot-msg-welcome') as HTMLTextAreaElement)?.value,
+        bot_msg_charge: ($('#bot-msg-charge') as HTMLTextAreaElement)?.value,
+        bot_msg_success: ($('#bot-msg-success') as HTMLTextAreaElement)?.value,
+        bot_msg_expired: ($('#bot-msg-expired') as HTMLTextAreaElement)?.value,
+      };
+      try {
+        await api('/api/v1/admin/settings', { method: 'PATCH', body: JSON.stringify(body) });
+        messagesResult.textContent = '✅ Mensagens salvas!';
+        messagesResult.style.color = 'var(--success)';
+      } catch (err: any) {
+        messagesResult.textContent = `❌ ${err.message}`;
+        messagesResult.style.color = 'var(--danger)';
+      }
+      setTimeout(() => messagesResult.textContent = '', 4000);
+    });
+  }
+}
+
 function loadApiPage() {
   api('/api/v1/auth/me').then(res => {
     const el = $('#api-page-key-prefix');
@@ -1250,6 +1358,7 @@ async function init() {
   initCobrancasPage();
   initSandboxForm();
   initTelegramForm();
+  initBotForm();
 
   // Main nav
   $$('.nav-item[data-page]').forEach(el => {

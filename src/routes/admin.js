@@ -124,12 +124,24 @@ async function adminRoutes(app) {
     // ==========================================
     // GET /settings - Configurações da plataforma
     // ==========================================
+    const ALL_SETTINGS_KEYS = [
+        'telegram_bot_token', 'telegram_chat_id',
+        'bot_token', 'bot_test_chat_id',
+        'bot_msg_welcome', 'bot_msg_charge', 'bot_msg_success', 'bot_msg_expired',
+    ];
+
     app.get('/settings', async (request, reply) => {
-        const rows = await db('platform_settings').whereIn('key', ['telegram_bot_token', 'telegram_chat_id']);
+        const rows = await db('platform_settings').whereIn('key', ALL_SETTINGS_KEYS);
         const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
         return {
             telegram_bot_token: map.telegram_bot_token ? '***' + map.telegram_bot_token.slice(-6) : null,
             telegram_chat_id: map.telegram_chat_id || null,
+            bot_token: map.bot_token ? '***' + map.bot_token.slice(-6) : null,
+            bot_test_chat_id: map.bot_test_chat_id || null,
+            bot_msg_welcome: map.bot_msg_welcome || '',
+            bot_msg_charge: map.bot_msg_charge || '',
+            bot_msg_success: map.bot_msg_success || '',
+            bot_msg_expired: map.bot_msg_expired || '',
         };
     });
 
@@ -137,8 +149,13 @@ async function adminRoutes(app) {
     // PATCH /settings - Salva configurações da plataforma
     // ==========================================
     app.patch('/settings', async (request, reply) => {
-        const { telegram_bot_token, telegram_chat_id } = request.body || {};
-        for (const [key, value] of Object.entries({ telegram_bot_token, telegram_chat_id })) {
+        const allowed = [
+            'telegram_bot_token', 'telegram_chat_id',
+            'bot_token', 'bot_test_chat_id',
+            'bot_msg_welcome', 'bot_msg_charge', 'bot_msg_success', 'bot_msg_expired',
+        ];
+        for (const key of allowed) {
+            const value = request.body?.[key];
             if (value !== undefined) {
                 await db('platform_settings')
                     .insert({ key, value, updated_at: new Date() })
@@ -149,7 +166,7 @@ async function adminRoutes(app) {
     });
 
     // ==========================================
-    // POST /settings/test-telegram - Envia mensagem de teste
+    // POST /settings/test-telegram - Envia mensagem de teste (alertas admin)
     // ==========================================
     app.post('/settings/test-telegram', async (request, reply) => {
         const telegram = require('../services/telegram');
@@ -159,6 +176,37 @@ async function adminRoutes(app) {
         }
         await telegram.sendMessage('🟢 <b>BISTECA</b> — Notificações Telegram configuradas com sucesso!');
         return { message: 'Mensagem de teste enviada' };
+    });
+
+    // ==========================================
+    // POST /bot/test-message - Testa conexão do bot de vendas
+    // ==========================================
+    app.post('/bot/test-message', async (request, reply) => {
+        const rows = await db('platform_settings').whereIn('key', ['bot_token', 'bot_test_chat_id']);
+        const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+
+        if (!map.bot_token || !map.bot_test_chat_id) {
+            return reply.status(400).send({ error: 'Salve o Token e o Chat ID de Testes primeiro.' });
+        }
+
+        try {
+            const res = await fetch(`https://api.telegram.org/bot${map.bot_token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: map.bot_test_chat_id,
+                    text: '🤖 <b>BISTECA</b> — Conexão com o bot de vendas funcionando!\n\nSeu bot está pronto para receber clientes.',
+                    parse_mode: 'HTML',
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                return reply.status(400).send({ error: `Telegram API: ${data.description || 'Erro desconhecido'}` });
+            }
+            return { message: 'Mensagem de teste enviada com sucesso!' };
+        } catch (err) {
+            return reply.status(500).send({ error: `Falha ao conectar: ${err.message}` });
+        }
     });
 }
 

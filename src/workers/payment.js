@@ -117,7 +117,9 @@ async function handleChargeCompleted(correlationId, payload) {
             correlationID: correlationId,
             value: charge.value,
             paidAt: new Date().toISOString(),
-            metadata: charge.metadata ? JSON.parse(charge.metadata) : null,
+            metadata: charge.metadata
+                ? (typeof charge.metadata === 'string' ? JSON.parse(charge.metadata) : charge.metadata)
+                : null,
         },
     }, {
         attempts: 8,

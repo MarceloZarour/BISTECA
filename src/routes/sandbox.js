@@ -57,7 +57,7 @@ async function sandboxRoutes(app) {
             merchant_id: merchant.id,
             value,
             status: 'pending',
-            metadata: JSON.stringify({ sandbox: true }),
+            metadata: null,
         });
 
         return {
@@ -86,21 +86,7 @@ async function sandboxRoutes(app) {
             return reply.status(409).send({ error: 'Cobrança já foi paga' });
         }
 
-        // Cria registro no webhook_events para não quebrar o worker
-        const existing = await db('webhook_events')
-            .where({ source: 'woovi', correlation_id: correlationId, event_type: 'OPENPIX:CHARGE_COMPLETED' })
-            .first();
-        if (!existing) {
-            await db('webhook_events').insert({
-                source: 'woovi',
-                event_type: 'OPENPIX:CHARGE_COMPLETED',
-                correlation_id: correlationId,
-                payload: JSON.stringify({ sandbox: true }),
-                status: 'pending',
-            });
-        }
-
-        // Processa diretamente (sem BullMQ)
+        // Processa diretamente (sem BullMQ) — não precisa de webhook_events
         await handleChargeCompleted(correlationId, { sandbox: true });
 
         return { success: true, message: 'Pagamento simulado com sucesso' };

@@ -1,4 +1,4 @@
-const { v4: uuid } = require('uuid');
+const crypto = require('crypto');
 const db = require('../database/connection');
 
 /**
@@ -19,7 +19,7 @@ async function processPayment({ chargeId, merchantAccountId, amount, feeRate, id
         // 2) Calcula split
         const fee = Math.round(amount * feeRate);
         const merchantAmount = amount - fee;
-        const txId = uuid();
+        const txId = crypto.randomUUID();
 
         // 3) Busca contas do sistema
         const escrowAccount = await trx('accounts').where('owner_type', 'escrow').first();
@@ -91,7 +91,7 @@ async function reserveForPayout({ merchantAccountId, amount, payoutId, idempoten
 
         // 2) Busca conta de escrow de saques
         const payoutEscrow = await trx('accounts').where('owner_type', 'payout_escrow').first();
-        const txId = uuid();
+        const txId = crypto.randomUUID();
 
         // 3) Débito do merchant + crédito no escrow
         await trx('ledger_entries').insert([
@@ -139,12 +139,12 @@ async function resolvePayout({ amount, payoutId, idempotencyKey }) {
         if (!externalSettlement) {
             // Cria conta de liquidação se não existir (apenas uma vez)
             const [newAcc] = await trx('accounts').insert({
-                id: uuid(), owner_type: 'external_settlement'
+                id: crypto.randomUUID(), owner_type: 'external_settlement'
             }).returning('*');
             Object.assign(externalSettlement || {}, newAcc);
         }
 
-        const txId = uuid();
+        const txId = crypto.randomUUID();
 
         await trx('ledger_entries').insert([
             {
@@ -177,7 +177,7 @@ async function resolvePayout({ amount, payoutId, idempotencyKey }) {
 async function rejectPayout({ merchantAccountId, amount, payoutId, idempotencyKey }) {
     return db.transaction(async (trx) => {
         const payoutEscrow = await trx('accounts').where('owner_type', 'payout_escrow').first();
-        const txId = uuid();
+        const txId = crypto.randomUUID();
 
         await trx('ledger_entries').insert([
             {

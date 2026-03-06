@@ -1,4 +1,4 @@
-const { v4: uuid } = require('uuid');
+const crypto = require('crypto');
 const woovi = require('../services/woovi');
 const db = require('../database/connection');
 
@@ -14,7 +14,7 @@ async function createChargeHandler(request, reply) {
         return reply.status(400).send({ error: 'Valor mínimo é R$ 1,00 (100 centavos)' });
     }
 
-    const correlationID = uuid();
+    const correlationID = crypto.randomUUID();
 
     try {
         // 1) Cria a cobrança na Woovi

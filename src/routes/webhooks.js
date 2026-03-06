@@ -34,7 +34,7 @@ async function wooviWebhookHandler(request, reply) {
     const payload = request.body;
 
     // 0) Responde ao ping de validação da Woovi (body vazio ou evento especial)
-    if (!payload || !payload.event || payload.event === 'ping' || payload.event === 'webhook_validation') {
+    if (!payload || !payload.event || payload.event === 'ping' || payload.event === 'webhook_validation' || payload.evento === 'teste_webhook') {
         request.log.info({ body: payload }, 'Webhook ping/teste recebido — respondendo 200');
         return reply.status(200).send({ status: 'ok' });
     }

@@ -494,7 +494,7 @@ async function loadTransacoesTab() {
                 <td style="color:var(--text-tertiary);font-family:monospace;font-size:11px;">${tx.correlation_id.substring(0, 12)}...</td>
                 <td>${isPayout ? 'Saque (Bisteco)' : 'Cobrança Pix'}</td>
                 <td style="color:var(--text-tertiary);">${isPayout ? '---' : 'Consumidor'}</td>
-                <td style="font-weight:600; color:${isPayout ? 'var(--danger-color)' : 'var(--success-color)'};">
+                <td style="font-weight:600; color:${isPayout ? 'var(--danger)' : 'var(--success)'};">
                     ${isPayout ? '-' : '+'} ${fmt(tx.amount)}
                 </td>
                 <td><span class="badge badge-${stType}">${tx.status}</span></td>
@@ -533,7 +533,7 @@ async function loadReembolsos() {
           <td style="color:var(--text-tertiary);font-family:monospace;font-size:11px;">${r.id.substring(0, 12)}...</td>
           <td style="font-family:monospace;font-size:11px;">${r.charge_correlation_id.substring(0, 12)}...</td>
           <td style="color:var(--text-tertiary);">—</td>
-          <td style="font-weight:600;color:var(--danger-color);">- ${fmt(r.value)}</td>
+          <td style="font-weight:600;color:var(--danger);">- ${fmt(r.value)}</td>
           <td><span class="badge badge-${stType}">${stLabel}</span></td>
           <td style="color:var(--text-tertiary);">${r.comment || '—'}</td>
           <td style="color:var(--text-tertiary);">${fmtDate(r.created_at)}</td>
@@ -609,7 +609,7 @@ async function loadBistecos() {
                 <td style="color:var(--text-tertiary);">${m.email}</td>
                 <td style="font-weight:600; color:var(--text-primary);">${(m.fee_rate * 100).toFixed(2).replace('.00', '')}%</td>
                 <td style="font-family:monospace;font-size:12px;">${m.api_key_prefix}••••••••</td>
-                <td style="font-weight:600; color:var(--success-color);">${fmt(m.balance)}</td>
+                <td style="font-weight:600; color:var(--success);">${fmt(m.balance)}</td>
                 <td style="color:var(--text-tertiary);">${fmtDateShort(m.created_at)}</td>
             </tr>
         `;
@@ -693,7 +693,7 @@ function loadSettings() {
     if (tokenEl) {
       if (rawKey) {
         tokenEl.textContent = rawKey;
-        (tokenEl as HTMLElement).style.color = 'var(--success-color)';
+        (tokenEl as HTMLElement).style.color = 'var(--success)';
       } else {
         tokenEl.textContent = `${res.api_key_prefix}••••••••••••••••••••••••••••••`;
       }
@@ -779,7 +779,7 @@ function initSettingsForm() {
         const tokenEl = $('#settings-apikey');
         if (tokenEl) {
           tokenEl.textContent = res.api_key;
-          (tokenEl as HTMLElement).style.color = 'var(--success-color)';
+          (tokenEl as HTMLElement).style.color = 'var(--success)';
         }
         if (regenWarning) regenWarning.style.display = 'none';
         regenBtn.textContent = 'Chave gerada!';

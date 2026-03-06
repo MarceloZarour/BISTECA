@@ -41,7 +41,6 @@ async function buildApp() {
             await app.register(require('@fastify/static'), {
                 root: dashboardPath,
                 prefix: '/',
-                decorateReply: false,
             });
             // SPA fallback: serve index.html for any non-API/non-webhook route
             app.setNotFoundHandler((req, reply) => {
@@ -52,16 +51,8 @@ async function buildApp() {
                 }
             });
         }
-    } catch (e) { /* dashboard not built yet, no-op */ }
+    } catch (e) { console.log('Dashboard static setup skipped:', e.message); }
 
-    app.addHook('onRequest', (req, reply, done) => {
-        try { require('fs').appendFileSync('woovi_debug.log', `REQ: [${req.method}] ${req.url} headers: ${JSON.stringify(req.headers)}\n`); } catch (e) { }
-        done();
-    });
-    app.addHook('onResponse', (req, reply, done) => {
-        try { require('fs').appendFileSync('woovi_debug.log', `RES: [${req.method}] ${req.url} status: ${reply.statusCode}\n`); } catch (e) { }
-        done();
-    });
 
     // ========================================
     // Rotas Públicas (sem auth)

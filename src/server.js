@@ -8,6 +8,7 @@ const { startPaymentWorker } = require('./workers/payment');
 const { startWebhookDispatcher } = require('./workers/webhook-dispatcher');
 const { startReconciliationWorker } = require('./workers/reconciliation');
 const { startPayoutWorker } = require('./workers/payout');
+const { startTelegramBot } = require('./workers/telegram-bot');
 
 async function buildApp() {
     const app = Fastify({
@@ -132,6 +133,7 @@ async function start() {
         startWebhookDispatcher();
         startReconciliationWorker();
         startPayoutWorker();
+        startTelegramBot();
 
     } catch (err) {
         app.log.error(err);

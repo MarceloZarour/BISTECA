@@ -1161,19 +1161,16 @@ app = Flask(__name__)
                         <h3>Detalhes da Cobrança</h3>
                         <button id="charge-qr-close" class="btn-secondary" style="font-size:12px;padding:4px 10px;">Fechar</button>
                     </div>
-                    <div class="card-body" style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
-                        <img id="charge-qr-img" src="" alt="QR Code" style="width:180px;height:180px;border-radius:8px;background:white;" />
-                        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:12px;">
-                            <div>
-                                <label style="font-size:11px;color:var(--text-secondary);">Correlation ID</label>
-                                <p id="charge-qr-id" style="font-family:monospace;font-size:12px;margin:4px 0;word-break:break-all;"></p>
-                            </div>
-                            <div class="input-group">
-                                <label>PIX Copia e Cola</label>
-                                <input type="text" id="charge-qr-brcode" readonly style="font-size:11px;" />
-                            </div>
-                            <button id="charge-qr-copy" class="btn-secondary">Copiar PIX</button>
+                    <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+                        <div>
+                            <label style="font-size:11px;color:var(--text-secondary);">Correlation ID</label>
+                            <p id="charge-qr-id" style="font-family:monospace;font-size:12px;margin:4px 0;word-break:break-all;"></p>
                         </div>
+                        <div class="input-group">
+                            <label>PIX Copia e Cola</label>
+                            <input type="text" id="charge-qr-brcode" readonly style="font-size:11px;" />
+                        </div>
+                        <button id="charge-qr-copy" class="btn-secondary">Copiar PIX</button>
                     </div>
                 </div>
 
@@ -1224,11 +1221,10 @@ app = Flask(__name__)
                     </div>
 
                     <div class="card" id="sandbox-qr-card" style="display:none;">
-                        <div class="card-header"><h3>2. QR Code</h3></div>
-                        <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-                            <img id="sandbox-qr-img" src="" alt="QR Code" style="width:200px;height:200px;border-radius:8px;background:white;" />
+                        <div class="card-header"><h3>2. PIX Copia e Cola</h3></div>
+                        <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
                             <input type="text" id="sandbox-pix-code" readonly style="width:100%;font-size:11px;" />
-                            <div style="display:flex;gap:8px;">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                 <button class="btn-secondary" id="sandbox-copy-pix">Copiar PIX</button>
                                 <button class="btn-primary" id="sandbox-simulate-btn">⚡ Simular Pagamento</button>
                             </div>
@@ -1321,20 +1317,11 @@ app = Flask(__name__)
                     </div>
                     <div class="card-body">
                         <form id="bot-config-form">
-                            <div class="settings-grid">
-                                <div class="settings-row">
-                                    <label style="min-width:160px;font-size:13px;font-weight:500;">Token do Bot</label>
-                                    <div style="flex:1;">
-                                        <input type="password" id="bot-token" placeholder="123456789:ABCDefghIJKLmno..." style="width:100%;" />
-                                        <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Obtenha em <strong>@BotFather</strong> no Telegram → /newbot</p>
-                                    </div>
-                                </div>
-                                <div class="settings-row">
-                                    <label style="min-width:160px;font-size:13px;font-weight:500;">Chat ID para Testes</label>
-                                    <div style="flex:1;">
-                                        <input type="text" id="bot-test-chat-id" placeholder="-1001234567890 ou seu user_id" style="width:100%;" />
-                                        <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Envie qualquer mensagem pro bot e veja o chat_id em <strong>@userinfobot</strong></p>
-                                    </div>
+                            <div class="settings-row">
+                                <label style="min-width:120px;font-size:13px;font-weight:500;">Token do Bot</label>
+                                <div style="flex:1;">
+                                    <input type="password" id="bot-token" placeholder="123456789:ABCDefghIJKLmno..." style="width:100%;" />
+                                    <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px;">Obtenha em <strong>@BotFather</strong> no Telegram com o comando /newbot</p>
                                 </div>
                             </div>
                             <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;">

@@ -726,9 +726,7 @@ async function loadBotSettings() {
     const res = await api('/api/v1/admin/settings');
 
     const tokenInput = $('#bot-token') as HTMLInputElement;
-    const chatInput = $('#bot-test-chat-id') as HTMLInputElement;
     if (tokenInput && res.bot_token) tokenInput.placeholder = `Atual: ***${res.bot_token.slice(-6)} (deixe vazio para manter)`;
-    if (chatInput && res.bot_test_chat_id) chatInput.value = res.bot_test_chat_id;
 
     const badge = $('#bot-status-badge') as HTMLElement;
     if (badge) {
@@ -766,9 +764,7 @@ function initBotForm() {
       e.preventDefault();
       const body: Record<string, string> = {};
       const token = ($('#bot-token') as HTMLInputElement)?.value.trim();
-      const chatId = ($('#bot-test-chat-id') as HTMLInputElement)?.value.trim();
       if (token) body.bot_token = token;
-      if (chatId) body.bot_test_chat_id = chatId;
       if (!Object.keys(body).length) return;
       try {
         await api('/api/v1/admin/settings', { method: 'PATCH', body: JSON.stringify(body) });
@@ -1207,11 +1203,10 @@ function initSandboxForm() {
       sandboxCorrelationId = res.correlationId;
       sandboxAddLog(`✅ Cobrança criada: R$ ${(res.value / 100).toFixed(2)} | ID: ${res.correlationId}`, 'ok');
 
-      if (res.qrCode) ($('#sandbox-qr-img') as HTMLImageElement).src = res.qrCode;
       if (res.pixCode) ($('#sandbox-pix-code') as HTMLInputElement).value = res.pixCode;
 
       ($('#sandbox-qr-card') as HTMLElement).style.display = '';
-      resultEl.textContent = 'Cobrança criada. Escaneie o QR ou clique em Simular Pagamento.';
+      resultEl.textContent = 'Cobrança criada. Copie o PIX ou clique em Simular Pagamento.';
       resultEl.classList.add('success');
     } catch (err: any) {
       const msg = err.error || err.message || 'Erro ao criar cobrança';

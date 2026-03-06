@@ -126,7 +126,7 @@ async function adminRoutes(app) {
     // ==========================================
     const ALL_SETTINGS_KEYS = [
         'telegram_bot_token', 'telegram_chat_id',
-        'bot_token', 'bot_test_chat_id',
+        'bot_token',
         'bot_msg_welcome', 'bot_msg_charge', 'bot_msg_success', 'bot_msg_expired',
     ];
 
@@ -137,7 +137,6 @@ async function adminRoutes(app) {
             telegram_bot_token: map.telegram_bot_token ? '***' + map.telegram_bot_token.slice(-6) : null,
             telegram_chat_id: map.telegram_chat_id || null,
             bot_token: map.bot_token ? '***' + map.bot_token.slice(-6) : null,
-            bot_test_chat_id: map.bot_test_chat_id || null,
             bot_msg_welcome: map.bot_msg_welcome || '',
             bot_msg_charge: map.bot_msg_charge || '',
             bot_msg_success: map.bot_msg_success || '',
@@ -151,7 +150,7 @@ async function adminRoutes(app) {
     app.patch('/settings', async (request, reply) => {
         const allowed = [
             'telegram_bot_token', 'telegram_chat_id',
-            'bot_token', 'bot_test_chat_id',
+            'bot_token',
             'bot_msg_welcome', 'bot_msg_charge', 'bot_msg_success', 'bot_msg_expired',
         ];
         for (const key of allowed) {
@@ -179,31 +178,26 @@ async function adminRoutes(app) {
     });
 
     // ==========================================
-    // POST /bot/test-message - Testa conexão do bot de vendas
+    // POST /bot/test-message - Verifica se o token do bot é válido (getMe)
     // ==========================================
     app.post('/bot/test-message', async (request, reply) => {
-        const rows = await db('platform_settings').whereIn('key', ['bot_token', 'bot_test_chat_id']);
+        const rows = await db('platform_settings').whereIn('key', ['bot_token']);
         const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
 
-        if (!map.bot_token || !map.bot_test_chat_id) {
-            return reply.status(400).send({ error: 'Salve o Token e o Chat ID de Testes primeiro.' });
+        if (!map.bot_token) {
+            return reply.status(400).send({ error: 'Salve o Token do Bot primeiro.' });
         }
 
         try {
-            const res = await fetch(`https://api.telegram.org/bot${map.bot_token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: map.bot_test_chat_id,
-                    text: '🤖 <b>BISTECA</b> — Conexão com o bot de vendas funcionando!\n\nSeu bot está pronto para receber clientes.',
-                    parse_mode: 'HTML',
-                }),
-            });
+            const res = await fetch(`https://api.telegram.org/bot${map.bot_token}/getMe`);
             const data = await res.json();
-            if (!res.ok) {
-                return reply.status(400).send({ error: `Telegram API: ${data.description || 'Erro desconhecido'}` });
+            if (!data.ok) {
+                return reply.status(400).send({ error: `Token inválido: ${data.description}` });
             }
-            return { message: 'Mensagem de teste enviada com sucesso!' };
+            return {
+                message: `✅ Bot conectado: @${data.result.username}`,
+                username: data.result.username,
+            };
         } catch (err) {
             return reply.status(500).send({ error: `Falha ao conectar: ${err.message}` });
         }

@@ -119,6 +119,9 @@ async function dashboardRoutes(app) {
                 healthScore,
                 rewardsCentavos,
                 rewardsTarget: 10_000_000,
+            },
+            security: {
+                webhookSecretConfigured: !!process.env.WOOVI_WEBHOOK_SECRET,
             }
         };
     });

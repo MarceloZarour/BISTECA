@@ -1114,6 +1114,32 @@ canvas {
 }
 
 /* =========================================
+   Charge filter buttons
+   ========================================= */
+.charge-filter-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+}
+
+.charge-filter-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.charge-filter-btn.active {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* =========================================
    Tx list (payout history)
    ========================================= */
 .tx-list {

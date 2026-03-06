@@ -6,7 +6,9 @@ async function authRoutes(app) {
     // ==========================================
     // POST /login - Autenticação por Email e Senha
     // ==========================================
-    app.post('/login', async (request, reply) => {
+    app.post('/login', {
+        config: { rateLimit: { max: 10, timeWindow: '1 minute', keyGenerator: (req) => req.ip } }
+    }, async (request, reply) => {
         const { email, password } = request.body;
 
         if (!email || !password) {
@@ -36,7 +38,9 @@ async function authRoutes(app) {
     // ==========================================
     // POST /register - Cadastro Público de Lojistas
     // ==========================================
-    app.post('/register', async (request, reply) => {
+    app.post('/register', {
+        config: { rateLimit: { max: 5, timeWindow: '1 minute', keyGenerator: (req) => req.ip } }
+    }, async (request, reply) => {
         const { name, email, password } = request.body;
 
         if (!name || !email || !password) {

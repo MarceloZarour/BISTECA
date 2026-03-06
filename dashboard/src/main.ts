@@ -92,6 +92,7 @@ function navigateTo(page: string) {
 
   if (page === 'overview') loadOverview();
   if (page === 'financeiro') loadFinanceiro();
+  if (page === 'cobrancas') loadCobrancas();
   if (page === 'reembolsos') loadReembolsos();
   if (page === 'bistecos') loadBistecos();
   if (page === 'settings') loadSettings();
@@ -257,6 +258,10 @@ async function loadOverview() {
       const tgt = (w.rewardsTarget / 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
       ($('#rewards-progress') as HTMLElement).textContent = `R$ ${brl} / R$ ${tgt}`;
       ($('#rewards-fill') as HTMLElement).style.width = `${Math.round(progress * 100)}%`;
+    }
+    // Alerta de segurança para admin
+    if (isAdmin && res.security?.webhookSecretConfigured === false) {
+      showToast('WOOVI_WEBHOOK_SECRET não configurado — webhooks sem validação de assinatura!', 'error');
     }
   } catch (err) {
     console.error('Failed to load stats', err);
@@ -906,6 +911,129 @@ function initPayoutForm() {
 }
 
 // =========================================
+// Cobranças
+// =========================================
+let currentChargeFilter = 'all';
+
+async function loadCobrancas(status = currentChargeFilter) {
+  currentChargeFilter = status;
+  const tbody = $('#charges-tbody');
+  const emptyEl = $('#charges-empty');
+  const countEl = $('#charges-count');
+  tbody.innerHTML = '';
+
+  try {
+    const url = isAdmin
+      ? `/api/v1/merchant-dashboard/charges?status=${status}`
+      : `/api/v1/merchant-dashboard/charges?status=${status}`;
+    const res = await api(url);
+    const charges = res.charges || [];
+
+    countEl.textContent = `${res.total} total`;
+
+    if (charges.length === 0) {
+      emptyEl.style.display = 'flex';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    const statusLabel: Record<string, string> = { pending: 'Pendente', paid: 'Pago', expired: 'Expirada', refunded: 'Reembolsada' };
+    const statusClass: Record<string, string> = { pending: 'pending', paid: 'completed', expired: 'failed', refunded: 'failed' };
+
+    charges.forEach((c: any) => {
+      const sc = statusClass[c.status] || 'pending';
+      const sl = statusLabel[c.status] || c.status;
+      const shortId = c.correlation_id.substring(0, 8) + '…';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-family:monospace;font-size:12px;" title="${c.correlation_id}">${shortId}</td>
+        <td>${fmt(c.value)}</td>
+        <td><span class="tx-status ${sc}">${sl}</span></td>
+        <td style="font-size:12px;">${fmtDate(c.created_at)}</td>
+        <td><button class="btn-secondary charge-detail-btn" data-id="${c.correlation_id}" data-brcode="${c.br_code || ''}" data-qr="${c.qr_code_image || ''}" style="font-size:12px;padding:4px 10px;">Ver QR</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Load webhook logs alongside
+    loadWebhookLogs();
+  } catch (e) {
+    emptyEl.style.display = 'flex';
+  }
+}
+
+async function loadWebhookLogs() {
+  const tbody = $('#webhook-logs-tbody');
+  const emptyEl = $('#webhook-logs-empty');
+  tbody.innerHTML = '';
+
+  try {
+    const res = await api('/api/v1/merchant-dashboard/webhook-logs');
+    const logs = res.logs || [];
+
+    if (logs.length === 0) {
+      emptyEl.style.display = 'flex';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    logs.forEach((l: any) => {
+      const ok = l.status === 'success';
+      const tr = document.createElement('tr');
+      const shortUrl = l.webhook_url.length > 35 ? l.webhook_url.substring(0, 35) + '…' : l.webhook_url;
+      tr.innerHTML = `
+        <td style="font-size:12px;">${fmtDate(l.created_at)}</td>
+        <td style="font-size:12px;">${l.event}</td>
+        <td style="font-size:11px;font-family:monospace;" title="${l.webhook_url}">${shortUrl}</td>
+        <td><span class="tx-status ${ok ? 'completed' : 'failed'}">${ok ? `✓ ${l.status_code || 200}` : `✗ ${l.error ? l.error.substring(0, 30) : 'falhou'}`}</span></td>
+        <td style="font-size:12px;">#${l.attempt}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    emptyEl.style.display = 'flex';
+  }
+}
+
+function initCobrancasPage() {
+  // Filtros
+  $$('.charge-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.charge-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const status = (btn as HTMLElement).dataset.status || 'all';
+      loadCobrancas(status);
+    });
+  });
+
+  // Delegação para botões "Ver QR" (gerados dinamicamente)
+  $('#charges-tbody').addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.charge-detail-btn') as HTMLElement;
+    if (!btn) return;
+    const id = btn.dataset.id || '';
+    const brCode = btn.dataset.brcode || '';
+    const qr = btn.dataset.qr || '';
+
+    ($('#charge-qr-id') as HTMLElement).textContent = id;
+    ($('#charge-qr-brcode') as HTMLInputElement).value = brCode;
+    ($('#charge-qr-img') as HTMLImageElement).src = qr;
+    ($('#charge-qr-modal') as HTMLElement).style.display = '';
+    ($('#charge-qr-modal') as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // Fechar modal
+  $('#charge-qr-close')?.addEventListener('click', () => {
+    ($('#charge-qr-modal') as HTMLElement).style.display = 'none';
+  });
+
+  // Copiar PIX
+  $('#charge-qr-copy')?.addEventListener('click', () => {
+    const code = ($('#charge-qr-brcode') as HTMLInputElement).value;
+    if (code) navigator.clipboard.writeText(code).then(() => showToast('PIX copiado!', 'success'));
+  });
+}
+
+// =========================================
 // Sandbox
 // =========================================
 let sandboxCorrelationId: string | null = null;
@@ -1108,6 +1236,7 @@ async function init() {
   initMerchantForm();
   initSettingsForm();
   initRefundForm();
+  initCobrancasPage();
   initSandboxForm();
   initTelegramForm();
 

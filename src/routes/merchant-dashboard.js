@@ -253,6 +253,33 @@ async function merchantDashboardRoutes(app) {
             pixKeyType: request.merchant.pix_key_type || 'RANDOM',
         };
     });
+
+    // ==========================================
+    // GET /charges - Lista de cobranças do lojista
+    // ==========================================
+    app.get('/charges', async (request, reply) => {
+        const { status, limit = 50, offset = 0 } = request.query;
+        let query = db('charges')
+            .where('merchant_id', merchantId)
+            .orderBy('created_at', 'desc')
+            .limit(Math.min(parseInt(limit), 100))
+            .offset(parseInt(offset));
+        if (status && status !== 'all') query = query.where('status', status);
+        const charges = await query;
+        const totalRow = await db('charges').where('merchant_id', merchantId).count('id as count').first();
+        return { charges, total: parseInt(totalRow.count) };
+    });
+
+    // ==========================================
+    // GET /webhook-logs - Histórico de disparos de webhook
+    // ==========================================
+    app.get('/webhook-logs', async (request, reply) => {
+        const logs = await db('webhook_deliveries')
+            .where('merchant_id', merchantId)
+            .orderBy('created_at', 'desc')
+            .limit(50);
+        return { logs };
+    });
 }
 
 module.exports = merchantDashboardRoutes;

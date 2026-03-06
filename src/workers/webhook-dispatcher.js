@@ -1,6 +1,7 @@
 const { Worker } = require('bullmq');
 const redis = require('../redis');
 const config = require('../config');
+const db = require('../database/connection');
 
 /**
  * Worker que dispara webhooks para os Bots dos merchants.
@@ -36,6 +37,16 @@ function startWebhookDispatcher() {
 
         console.log(`[Dispatcher] Webhook entregue com sucesso para ${webhookUrl}`);
 
+        await db('webhook_deliveries').insert({
+            merchant_id: merchantId,
+            charge_correlation_id: data?.correlationID || null,
+            event,
+            webhook_url: webhookUrl,
+            status_code: response.status,
+            attempt: job.attemptsMade + 1,
+            status: 'success',
+        }).catch(() => {});
+
         const telegram = require('../services/telegram');
         await telegram.sendMessage(
             `📤 <b>Webhook entregue</b>\nURL: ${webhookUrl}\nEvento: ${event}`
@@ -49,8 +60,21 @@ function startWebhookDispatcher() {
         console.log(`[Dispatcher] Job ${job.id} entregue`);
     });
 
-    worker.on('failed', (job, err) => {
+    worker.on('failed', async (job, err) => {
         console.error(`[Dispatcher] Job ${job?.id} falhou (attempt ${job?.attemptsMade}):`, err.message);
+        const { merchantId, webhookUrl, event, data } = job?.data || {};
+        if (merchantId && webhookUrl) {
+            await db('webhook_deliveries').insert({
+                merchant_id: merchantId,
+                charge_correlation_id: data?.correlationID || null,
+                event: event || 'unknown',
+                webhook_url: webhookUrl,
+                status_code: null,
+                attempt: (job?.attemptsMade || 0) + 1,
+                status: 'failed',
+                error: err.message,
+            }).catch(() => {});
+        }
     });
 
     console.log('[Dispatcher] Webhook dispatcher iniciado');

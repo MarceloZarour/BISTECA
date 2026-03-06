@@ -95,6 +95,7 @@ function navigateTo(page: string) {
   if (page === 'reembolsos') loadReembolsos();
   if (page === 'bistecos') loadBistecos();
   if (page === 'settings') loadSettings();
+  if (page === 'sandbox') loadSandbox();
 }
 
 // =========================================
@@ -202,6 +203,9 @@ function loginSuccess() {
   const bistecosNav = document.querySelector('.nav-item[data-page="bistecos"]') as HTMLElement;
   if (bistecosNav) bistecosNav.style.display = isAdmin ? 'flex' : 'none';
 
+  const sandboxNav = document.querySelector('.nav-item[data-page="sandbox"]') as HTMLElement;
+  if (sandboxNav) sandboxNav.style.display = isAdmin ? 'flex' : 'none';
+
   navigateTo('overview');
 }
 
@@ -234,6 +238,26 @@ async function loadOverview() {
     renderRevenueChart(charts.weekSales);
     renderWeekChart('week-sales-chart', charts.weekSales);
     renderWeekChart('week-ticket-chart', charts.weekTicket);
+
+    // Widgets
+    const w = res.widgets;
+    if (w) {
+      const pct = Math.round(w.conversionRate * 100);
+      $('#conv-rate').textContent = `${pct}%`;
+      const ring = $('#conv-ring-fill') as unknown as SVGCircleElement;
+      if (ring) ring.setAttribute('stroke-dashoffset', (264 * (1 - w.conversionRate)).toFixed(1));
+
+      const hp = Math.round(w.healthScore * 100);
+      ($('#health-rate') as HTMLElement).textContent = `${(100 - hp).toFixed(1)}%`;
+      ($('#health-fill') as HTMLElement).style.width = `${hp}%`;
+      ($('#health-status') as HTMLElement).textContent = hp >= 95 ? 'Ótimo' : hp >= 80 ? 'Regular' : 'Crítico';
+
+      const progress = Math.min(1, w.rewardsCentavos / w.rewardsTarget);
+      const brl = (w.rewardsCentavos / 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+      const tgt = (w.rewardsTarget / 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+      ($('#rewards-progress') as HTMLElement).textContent = `R$ ${brl} / R$ ${tgt}`;
+      ($('#rewards-fill') as HTMLElement).style.width = `${Math.round(progress * 100)}%`;
+    }
   } catch (err) {
     console.error('Failed to load stats', err);
   }
@@ -419,6 +443,12 @@ async function loadSaldoTab() {
     const res = await api(url);
     const payouts = res.payouts || [];
     const availableTotal = res.availableBalance || 0;
+
+    // Pré-preencher chave Pix
+    if (res.pixKey) {
+      ($('#payout-pixkey') as HTMLInputElement).value = res.pixKey;
+      ($('#payout-pixtype') as HTMLSelectElement).value = res.pixKeyType || 'RANDOM';
+    }
 
     const pending = payouts.filter((p: any) => p.status === 'requested' || p.status === 'processing');
     const pendingTotal = pending.reduce((s: number, p: any) => s + p.amount, 0);
@@ -876,6 +906,177 @@ function initPayoutForm() {
 }
 
 // =========================================
+// Sandbox
+// =========================================
+let sandboxCorrelationId: string | null = null;
+
+async function loadSandbox() {
+  try {
+    const res = await api('/api/v1/sandbox/merchant');
+    const logEl = $('#sandbox-log');
+    if (logEl && logEl.children.length === 1) {
+      logEl.innerHTML = `<span style="color:var(--text-secondary);">Merchant sandbox: <b>${res.name}</b> | Saldo: ${fmt(res.balance)}</span>`;
+    }
+  } catch (err) {
+    console.error('Sandbox merchant error', err);
+  }
+}
+
+function sandboxAddLog(msg: string, type: 'info' | 'ok' | 'error' = 'info') {
+  const logEl = $('#sandbox-log');
+  if (!logEl) return;
+  const colors: Record<string, string> = { info: 'var(--text-secondary)', ok: 'var(--success)', error: 'var(--danger)' };
+  const entry = document.createElement('span');
+  entry.style.color = colors[type];
+  entry.textContent = `[${new Date().toLocaleTimeString('pt-BR')}] ${msg}`;
+  logEl.appendChild(entry);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function initSandboxForm() {
+  const chargeForm = $('#sandbox-charge-form') as HTMLFormElement;
+  if (!chargeForm) return;
+
+  chargeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#sandbox-charge-btn') as HTMLButtonElement;
+    const resultEl = $('#sandbox-charge-result');
+    btn.disabled = true;
+    resultEl.textContent = '';
+    resultEl.className = 'payout-result';
+
+    const value = parseInt(($('#sandbox-value') as HTMLInputElement).value);
+
+    // Clear previous QR
+    sandboxCorrelationId = null;
+    ($('#sandbox-qr-card') as HTMLElement).style.display = 'none';
+
+    try {
+      const res = await api('/api/v1/sandbox/charge', {
+        method: 'POST',
+        body: JSON.stringify({ value }),
+      });
+
+      sandboxCorrelationId = res.correlationId;
+      sandboxAddLog(`✅ Cobrança criada: R$ ${(res.value / 100).toFixed(2)} | ID: ${res.correlationId}`, 'ok');
+
+      if (res.qrCode) ($('#sandbox-qr-img') as HTMLImageElement).src = res.qrCode;
+      if (res.pixCode) ($('#sandbox-pix-code') as HTMLInputElement).value = res.pixCode;
+
+      ($('#sandbox-qr-card') as HTMLElement).style.display = '';
+      resultEl.textContent = 'Cobrança criada. Escaneie o QR ou clique em Simular Pagamento.';
+      resultEl.classList.add('success');
+    } catch (err: any) {
+      const msg = err.error || err.message || 'Erro ao criar cobrança';
+      resultEl.textContent = msg;
+      resultEl.classList.add('error');
+      sandboxAddLog(`❌ Erro: ${msg}`, 'error');
+    } finally { btn.disabled = false; }
+  });
+
+  // Simular pagamento
+  const simulateBtn = $('#sandbox-simulate-btn');
+  if (simulateBtn) {
+    simulateBtn.addEventListener('click', async () => {
+      if (!sandboxCorrelationId) return;
+      (simulateBtn as HTMLButtonElement).disabled = true;
+      sandboxAddLog('⏳ Simulando pagamento...', 'info');
+      try {
+        await api('/api/v1/sandbox/simulate-payment', {
+          method: 'POST',
+          body: JSON.stringify({ correlationId: sandboxCorrelationId }),
+        });
+        sandboxAddLog('✅ Pagamento simulado → ledger atualizado', 'ok');
+        sandboxAddLog('📤 Webhook enfileirado para merchant sandbox', 'ok');
+        showToast('Pagamento simulado com sucesso!', 'success');
+      } catch (err: any) {
+        const msg = err.error || err.message || 'Erro ao simular';
+        sandboxAddLog(`❌ ${msg}`, 'error');
+      } finally { (simulateBtn as HTMLButtonElement).disabled = false; }
+    });
+  }
+
+  // Copiar PIX
+  const copyBtn = $('#sandbox-copy-pix');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const code = ($('#sandbox-pix-code') as HTMLInputElement).value;
+      if (code) navigator.clipboard.writeText(code).then(() => showToast('PIX copiado!', 'success'));
+    });
+  }
+
+  // Limpar log
+  const clearBtn = $('#sandbox-clear-log');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      const logEl = $('#sandbox-log');
+      if (logEl) logEl.innerHTML = '<span style="color:var(--text-secondary);">Log limpo.</span>';
+    });
+  }
+}
+
+// =========================================
+// Telegram Settings
+// =========================================
+function initTelegramForm() {
+  const form = $('#telegram-form') as HTMLFormElement;
+  if (!form) return;
+
+  // Carregar configurações atuais
+  api('/api/v1/admin/settings').then(res => {
+    if (res.telegram_chat_id) ($('#telegram-chatid') as HTMLInputElement).value = res.telegram_chat_id;
+    // Token mascarado, não pré-preenchemos
+  }).catch(() => {});
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultEl = $('#telegram-result');
+    resultEl.textContent = '';
+    resultEl.className = 'payout-result';
+
+    const token = ($('#telegram-token') as HTMLInputElement).value.trim();
+    const chatId = ($('#telegram-chatid') as HTMLInputElement).value.trim();
+
+    if (!token || !chatId) {
+      resultEl.textContent = 'Preencha o Bot Token e o Chat ID';
+      resultEl.classList.add('error');
+      return;
+    }
+
+    try {
+      await api('/api/v1/admin/settings', {
+        method: 'PATCH',
+        body: JSON.stringify({ telegram_bot_token: token, telegram_chat_id: chatId }),
+      });
+      resultEl.textContent = 'Configurações salvas!';
+      resultEl.classList.add('success');
+      showToast('Telegram configurado!', 'success');
+    } catch (err: any) {
+      resultEl.textContent = err.error || 'Erro ao salvar';
+      resultEl.classList.add('error');
+    }
+  });
+
+  const testBtn = $('#telegram-test-btn');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      const resultEl = $('#telegram-result');
+      resultEl.textContent = '';
+      resultEl.className = 'payout-result';
+      (testBtn as HTMLButtonElement).disabled = true;
+      try {
+        await api('/api/v1/admin/settings/test-telegram', { method: 'POST' });
+        resultEl.textContent = 'Mensagem enviada! Verifique seu Telegram.';
+        resultEl.classList.add('success');
+      } catch (err: any) {
+        resultEl.textContent = err.error || 'Erro ao enviar mensagem de teste';
+        resultEl.classList.add('error');
+      } finally { (testBtn as HTMLButtonElement).disabled = false; }
+    });
+  }
+}
+
+// =========================================
 // Sub-tab Navigation
 // =========================================
 function initSubTabs() {
@@ -907,6 +1108,8 @@ async function init() {
   initMerchantForm();
   initSettingsForm();
   initRefundForm();
+  initSandboxForm();
+  initTelegramForm();
 
   // Main nav
   $$('.nav-item[data-page]').forEach(el => {

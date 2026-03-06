@@ -104,6 +104,29 @@ async function merchantDashboardRoutes(app) {
             }
         });
 
+        // Conversão: paid / (paid + expired) este mês
+        const totalCharged = await db('charges')
+            .where('merchant_id', merchantId)
+            .whereIn('status', ['paid', 'expired'])
+            .where('created_at', '>=', startOfMonth)
+            .count('id as count').first();
+        const conversionRate = parseInt(totalCharged.count) > 0
+            ? currentMonth.count / parseInt(totalCharged.count) : 0;
+
+        // Saúde: 1 - (reembolsos completados este mês / pagamentos)
+        const refundCount = await db('refunds')
+            .where('merchant_id', merchantId)
+            .where('status', 'completed')
+            .where('created_at', '>=', startOfMonth)
+            .count('id as count').first();
+        const healthScore = Math.max(0, 1 - parseInt(refundCount.count) / Math.max(1, currentMonth.count));
+
+        // Rewards: volume lifetime
+        const lifetimeRow = await db('charges')
+            .where({ merchant_id: merchantId, status: 'paid' })
+            .sum('value as total').first();
+        const rewardsCentavos = parseInt(lifetimeRow.total || 0);
+
         return {
             merchantInfo: {
                 id: request.merchantId,
@@ -124,6 +147,12 @@ async function merchantDashboardRoutes(app) {
             charts: {
                 weekSales,
                 weekTicket
+            },
+            widgets: {
+                conversionRate,
+                healthScore,
+                rewardsCentavos,
+                rewardsTarget: 10_000_000,
             }
         };
     });
@@ -219,7 +248,9 @@ async function merchantDashboardRoutes(app) {
 
         return {
             availableBalance,
-            payouts
+            payouts,
+            pixKey: request.merchant.pix_key || null,
+            pixKeyType: request.merchant.pix_key_type || 'RANDOM',
         };
     });
 }

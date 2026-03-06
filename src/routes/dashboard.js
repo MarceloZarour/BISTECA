@@ -83,6 +83,25 @@ async function dashboardRoutes(app) {
             }
         });
 
+        // Conversão: paid / (paid + expired) este mês (plataforma toda)
+        const totalCharged = await db('charges')
+            .whereIn('status', ['paid', 'expired'])
+            .where('created_at', '>=', startOfMonth)
+            .count('id as count').first();
+        const conversionRate = parseInt(totalCharged.count) > 0
+            ? currentMonth.count / parseInt(totalCharged.count) : 0;
+
+        // Saúde: 1 - (reembolsos completados este mês / pagamentos)
+        const refundCount = await db('refunds')
+            .where('status', 'completed')
+            .where('created_at', '>=', startOfMonth)
+            .count('id as count').first();
+        const healthScore = Math.max(0, 1 - parseInt(refundCount.count) / Math.max(1, currentMonth.count));
+
+        // Rewards: volume lifetime da plataforma
+        const lifetimeRow = await db('charges').where('status', 'paid').sum('value as total').first();
+        const rewardsCentavos = parseInt(lifetimeRow.total || 0);
+
         return {
             kpis: {
                 vendas: currentMonth.total,
@@ -94,6 +113,12 @@ async function dashboardRoutes(app) {
             charts: {
                 weekSales,
                 weekTicket
+            },
+            widgets: {
+                conversionRate,
+                healthScore,
+                rewardsCentavos,
+                rewardsTarget: 10_000_000,
             }
         };
     });

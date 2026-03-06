@@ -125,6 +125,11 @@ async function handleChargeCompleted(correlationId, payload) {
     });
 
     console.log(`[Worker] Pagamento processado: ${correlationId} | Merchant: ${merchant.name} | Valor: R$ ${(charge.value / 100).toFixed(2)}`);
+
+    const telegram = require('../services/telegram');
+    await telegram.sendMessage(
+        `✅ <b>Pagamento confirmado!</b>\nMerchant: <b>${merchant.name}</b>\nValor: R$ ${(charge.value / 100).toFixed(2)}\nID: <code>${correlationId}</code>`
+    );
 }
 
 /**
@@ -138,4 +143,4 @@ async function handleChargeExpired(correlationId) {
     console.log(`[Worker] Cobrança expirada: ${correlationId}`);
 }
 
-module.exports = { startPaymentWorker };
+module.exports = { startPaymentWorker, handleChargeCompleted };

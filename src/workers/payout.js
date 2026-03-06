@@ -62,6 +62,11 @@ function startPayoutWorker() {
                         .update({ status: 'completed', completed_at: new Date() });
 
                     console.log(`[Worker-Payouts] ✅ Saque ${correlationId} EFETIVADO no Ledger!`);
+
+                    const telegram = require('../services/telegram');
+                    await telegram.sendMessage(
+                        `💸 <b>Saque efetivado!</b>\nValor: R$ ${(payout.amount / 100).toFixed(2)}\nID: <code>${payout.id}</code>`
+                    );
                 }
                 else if (isFailed) {
                     // FALHA (ex: Chave pix recusada pela conta destino ou banco central)

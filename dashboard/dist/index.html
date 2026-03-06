@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
-  <script type="module" crossorigin src="/assets/index-CSJq_vNf.js"></script>
+  <script type="module" crossorigin src="/assets/index-CUeT_COi.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-4G95ZYKz.css">
 </head>
 
@@ -191,6 +191,13 @@
                         <path d="M16 3.13a4 4 0 010 7.75" />
                     </svg>
                     <span>Bistecos</span>
+                </a>
+                <a href="#" class="nav-item" data-page="sandbox">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+                    </svg>
+                    <span>Sandbox</span>
                 </a>
                 <a href="#" class="nav-item" data-page="settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -714,6 +721,81 @@
                                 <p id="settings-result" class="payout-result" style="margin-top:0.75rem;"></p>
                             </form>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== SANDBOX ==================== -->
+            <section id="page-sandbox" class="page">
+                <header class="page-header">
+                    <div>
+                        <h2 class="page-title">Sandbox de Testes</h2>
+                        <p class="page-subtitle">Teste o fluxo completo sem cliente real</p>
+                    </div>
+                </header>
+
+                <!-- Step 1 + Step 2 (QR) -->
+                <div class="content-row">
+                    <div class="card">
+                        <div class="card-header"><h3>1. Criar Cobrança de Teste</h3></div>
+                        <div class="card-body">
+                            <form id="sandbox-charge-form" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+                                <div class="input-group" style="flex:1;min-width:150px;">
+                                    <label>Valor (centavos)</label>
+                                    <input type="number" id="sandbox-value" value="1000" min="100" required />
+                                </div>
+                                <button type="submit" class="btn-primary" id="sandbox-charge-btn">Gerar PIX</button>
+                            </form>
+                            <p id="sandbox-charge-result" class="payout-result" style="margin-top:0.5rem;"></p>
+                        </div>
+                    </div>
+
+                    <div class="card" id="sandbox-qr-card" style="display:none;">
+                        <div class="card-header"><h3>2. QR Code</h3></div>
+                        <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+                            <img id="sandbox-qr-img" src="" alt="QR Code" style="width:200px;height:200px;border-radius:8px;background:white;" />
+                            <input type="text" id="sandbox-pix-code" readonly style="width:100%;font-size:11px;" />
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn-secondary" id="sandbox-copy-pix">Copiar PIX</button>
+                                <button class="btn-primary" id="sandbox-simulate-btn">⚡ Simular Pagamento</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Log de eventos -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Log de Eventos</h3>
+                        <button class="btn-secondary" id="sandbox-clear-log" style="font-size:12px;padding:4px 10px;">Limpar</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="sandbox-log" style="font-family:monospace;font-size:12px;display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;">
+                            <span style="color:var(--text-secondary);">Aguardando ação...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurações Telegram -->
+                <div class="card">
+                    <div class="card-header"><h3>Notificações Telegram</h3></div>
+                    <div class="card-body">
+                        <form id="telegram-form" style="display:flex;flex-direction:column;gap:12px;">
+                            <div class="input-group">
+                                <label>Bot Token</label>
+                                <input type="text" id="telegram-token" placeholder="1234567890:AAHdqTcvCH..." autocomplete="off" />
+                            </div>
+                            <div class="input-group">
+                                <label>Chat ID</label>
+                                <input type="text" id="telegram-chatid" placeholder="123456789" />
+                            </div>
+                            <p style="font-size:12px;color:var(--text-secondary);">Para obter seu Chat ID: envie qualquer mensagem para o seu bot e acesse <strong>@userinfobot</strong> no Telegram.</p>
+                            <div style="display:flex;gap:8px;">
+                                <button type="submit" class="btn-primary">Salvar</button>
+                                <button type="button" class="btn-secondary" id="telegram-test-btn">Testar</button>
+                            </div>
+                        </form>
+                        <p id="telegram-result" class="payout-result" style="margin-top:0.5rem;"></p>
                     </div>
                 </div>
             </section>

@@ -120,6 +120,46 @@ async function adminRoutes(app) {
             return reply.status(500).send({ error: 'Failed to create Bisteco' });
         }
     });
+
+    // ==========================================
+    // GET /settings - Configurações da plataforma
+    // ==========================================
+    app.get('/settings', async (request, reply) => {
+        const rows = await db('platform_settings').whereIn('key', ['telegram_bot_token', 'telegram_chat_id']);
+        const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+        return {
+            telegram_bot_token: map.telegram_bot_token ? '***' + map.telegram_bot_token.slice(-6) : null,
+            telegram_chat_id: map.telegram_chat_id || null,
+        };
+    });
+
+    // ==========================================
+    // PATCH /settings - Salva configurações da plataforma
+    // ==========================================
+    app.patch('/settings', async (request, reply) => {
+        const { telegram_bot_token, telegram_chat_id } = request.body || {};
+        for (const [key, value] of Object.entries({ telegram_bot_token, telegram_chat_id })) {
+            if (value !== undefined) {
+                await db('platform_settings')
+                    .insert({ key, value, updated_at: new Date() })
+                    .onConflict('key').merge();
+            }
+        }
+        return { message: 'Configurações salvas' };
+    });
+
+    // ==========================================
+    // POST /settings/test-telegram - Envia mensagem de teste
+    // ==========================================
+    app.post('/settings/test-telegram', async (request, reply) => {
+        const telegram = require('../services/telegram');
+        const { token, chatId } = await telegram.getConfig();
+        if (!token || !chatId) {
+            return reply.status(400).send({ error: 'Telegram não configurado. Salve o token e o chat ID primeiro.' });
+        }
+        await telegram.sendMessage('🟢 <b>BISTECA</b> — Notificações Telegram configuradas com sucesso!');
+        return { message: 'Mensagem de teste enviada' };
+    });
 }
 
 module.exports = adminRoutes;

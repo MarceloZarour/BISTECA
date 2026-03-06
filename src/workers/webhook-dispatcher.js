@@ -35,6 +35,11 @@ function startWebhookDispatcher() {
         }
 
         console.log(`[Dispatcher] Webhook entregue com sucesso para ${webhookUrl}`);
+
+        const telegram = require('../services/telegram');
+        await telegram.sendMessage(
+            `📤 <b>Webhook entregue</b>\nURL: ${webhookUrl}\nEvento: ${event}`
+        );
     }, {
         connection: redis,
         concurrency: 10,

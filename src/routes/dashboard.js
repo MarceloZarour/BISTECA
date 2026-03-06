@@ -5,13 +5,11 @@ const db = require('../database/connection');
  * Usa DASHBOARD_API_KEY para autenticação.
  */
 async function dashboardRoutes(app) {
-    // Middleware de autenticação Admin
+    // Middleware de autenticação Admin via JWT
+    app.addHook('preHandler', app.authenticate);
     app.addHook('preHandler', async (request, reply) => {
-        const adminKey = request.headers['authorization'] || request.headers['x-api-key'];
-        const configuredKey = process.env.DASHBOARD_API_KEY;
-
-        if (!configuredKey || adminKey !== configuredKey) {
-            return reply.status(401).send({ error: 'Unauthorized admin access' });
+        if (request.user.role !== 'admin') {
+            return reply.status(403).send({ error: 'Acesso negado: Requer privilégios de administrador' });
         }
     });
 

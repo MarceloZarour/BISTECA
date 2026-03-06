@@ -7,14 +7,12 @@ const db = require('../database/connection');
  * Servem para o dono da plataforma (BISTECA) gerenciar os Bistecos (Lojistas).
  */
 async function adminRoutes(app) {
-    // Middleware de autenticação Admin
+    // Middleware de autenticação Admin via JWT
+    app.addHook('preHandler', app.authenticate);
     app.addHook('preHandler', async (request, reply) => {
-        const adminKey = request.headers['authorization'] || request.headers['x-api-key'];
-        const configuredKey = process.env.DASHBOARD_API_KEY;
-
-        if (!configuredKey || adminKey !== configuredKey) {
+        if (request.user.role !== 'admin') {
             request.log.warn('Tentativa de acesso admin não autorizada');
-            return reply.status(401).send({ error: 'Unauthorized admin access' });
+            return reply.status(403).send({ error: 'Acesso negado: Requer privilégios de administrador' });
         }
     });
 
@@ -75,6 +73,8 @@ async function adminRoutes(app) {
 
         try {
             const result = await db.transaction(async (trx) => {
+                const defaultPassHash = await bcrypt.hash('bisteca123', 10);
+
                 // 1) Cria Merchant
                 const [merchant] = await trx('merchants').insert({
                     name,
@@ -84,7 +84,9 @@ async function adminRoutes(app) {
                     api_key_prefix: apiKeyPrefix,
                     webhook_url: webhookUrl || null,
                     pix_key: pixKey || null,
-                    pix_key_type: pixKeyType || null
+                    pix_key_type: pixKeyType || null,
+                    password_hash: defaultPassHash,
+                    role: 'merchant'
                 }).returning('*');
 
                 // 2) Cria Conta (Account)

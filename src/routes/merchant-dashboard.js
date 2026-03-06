@@ -1,13 +1,20 @@
 const db = require('../database/connection');
-const { authMiddleware } = require('../middleware/auth');
 
 /**
  * Endpoints protegidos para o Dashboard do Lojista (Merchant).
- * Usa a chave de API do Lojista (bst_live_...) para autenticação.
+ * Usa Autenticação via JWT Bearer Token.
  */
 async function merchantDashboardRoutes(app) {
-    // Middleware de autenticação Lojista
-    app.addHook('preHandler', authMiddleware);
+    // Middleware de autenticação JWT
+    app.addHook('preHandler', app.authenticate);
+    app.addHook('preHandler', async (request, reply) => {
+        const merchant = await db('merchants').where('id', request.user.id).first();
+        if (!merchant) return reply.status(404).send({ error: 'Lojista não encontrado' });
+
+        request.merchantId = merchant.id;
+        request.merchantAccountId = merchant.account_id;
+        request.merchant = merchant;
+    });
 
     // ==========================================
     // GET /stats - KPIs e Gráficos da Visão Geral (Apenas do Merchant)

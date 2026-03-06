@@ -16,7 +16,7 @@ function generateApiKey(environment = 'live') {
  * Middleware de autenticação.
  * Verifica a API key no header Authorization.
  */
-async function authMiddleware(request, reply) {
+async function apiKeyAuthMiddleware(request, reply) {
     const apiKey = request.headers['authorization'];
 
     if (!apiKey) {
@@ -45,4 +45,4 @@ async function authMiddleware(request, reply) {
     request.merchant = authenticatedMerchant;
 }
 
-module.exports = { authMiddleware, generateApiKey };
+module.exports = { apiKeyAuthMiddleware, generateApiKey };

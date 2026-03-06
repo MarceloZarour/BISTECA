@@ -3,10 +3,20 @@ const woovi = require('../services/woovi');
 const ledger = require('../services/ledger');
 const crypto = require('crypto');
 
-async function payoutsRoutes(fastify, options) {
+async function payoutsRoutes(app) {
+    // Middleware de autenticação JWT
+    app.addHook('preHandler', app.authenticate);
+    app.addHook('preHandler', async (request, reply) => {
+        const merchant = await db('merchants').where('id', request.user.id).first();
+        if (!merchant) return reply.status(404).send({ error: 'Lojista não encontrado' });
+
+        request.merchantId = merchant.id;
+        request.merchantAccountId = merchant.account_id;
+        request.merchant = merchant;
+    });
 
     // Lista histórico de saques do lojista
-    fastify.get('/', async (request, reply) => {
+    app.get('/', async (request, reply) => {
         const { merchant } = request;
         const limit = parseInt(request.query.limit) || 50;
 
@@ -19,7 +29,7 @@ async function payoutsRoutes(fastify, options) {
     });
 
     // Solicita um novo saque (transferência Pix)
-    fastify.post('/', async (request, reply) => {
+    app.post('/', async (request, reply) => {
         const { merchant } = request;
         const { amount, pixKey, pixKeyType } = request.body;
 

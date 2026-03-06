@@ -33,7 +33,7 @@ function showToast(msg: string, type: 'success' | 'error' = 'success') {
 async function api(path: string, opts: RequestInit = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...opts,
-    headers: { 'Authorization': apiKey, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    headers: { 'Authorization': apiKey ? `Bearer ${apiKey}` : '', 'Content-Type': 'application/json', ...(opts.headers || {}) },
   });
   const data = await res.json();
   if (!res.ok) throw { status: res.status, ...data };
@@ -76,34 +76,93 @@ function navigateTo(page: string) {
 }
 
 // =========================================
-// Login
+// Login & Register
 // =========================================
 function initLogin() {
-  const form = $('#login-form') as HTMLFormElement;
-  const input = $('#api-key-input') as HTMLInputElement;
-  const errorEl = $('#login-error');
-  const btn = $('#login-btn') as HTMLButtonElement;
+  const loginForm = $('#login-form') as HTMLFormElement;
+  const registerForm = $('#register-form') as HTMLFormElement;
+  const tabs = $$('.auth-tab');
 
-  form.addEventListener('submit', async (e) => {
+  // Tab Switching
+  tabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      tabs.forEach(t => t.classList.remove('active'));
+      $$('.auth-form').forEach(f => f.classList.remove('active'));
+
+      tab.classList.add('active');
+      const target = (tab as HTMLElement).dataset.tab;
+      $(`#${target}-form`)?.classList.add('active');
+    });
+  });
+
+  // Login Fix
+  loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const key = input.value.trim();
-    if (!key) return;
+    const email = ($('#login-email') as HTMLInputElement).value.trim();
+    const password = ($('#login-password') as HTMLInputElement).value.trim();
+    const btn = $('#login-btn') as HTMLButtonElement;
+    const errorEl = $('#login-error');
+
+    if (!email || !password) return;
     btn.disabled = true;
     errorEl.textContent = '';
 
     try {
-      apiKey = key;
-      isAdmin = !key.startsWith('bst_');
-      const testUrl = isAdmin ? '/api/v1/dashboard/stats' : '/api/v1/merchant-dashboard/stats';
-      await api(testUrl);
+      const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Credenciais inválidas');
+
+      apiKey = data.token;
+      isAdmin = data.role === 'admin';
       loginSuccess();
+
     } catch (err: any) {
-      if (err.status === 401 || err.status === 403) {
-        errorEl.textContent = 'Chave de Acesso Inválida';
-        apiKey = '';
-      } else {
-        errorEl.textContent = 'Erro ao conectar';
+      errorEl.textContent = err.message || 'Erro ao conectar';
+    } finally { btn.disabled = false; }
+  });
+
+  // Register Form
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = ($('#register-name') as HTMLInputElement).value.trim();
+    const email = ($('#register-email') as HTMLInputElement).value.trim();
+    const password = ($('#register-password') as HTMLInputElement).value.trim();
+    const btn = $('#register-btn') as HTMLButtonElement;
+    const errorEl = $('#register-error');
+
+    if (!name || !email || !password) return;
+    btn.disabled = true;
+    errorEl.textContent = '';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao criar conta');
+
+      apiKey = data.token;
+      isAdmin = false; // Registros públicos são sempre merchant
+
+      // Store raw key in RAM for the settings page this one time
+      if (data.api_key) {
+        window.sessionStorage.setItem('temp_raw_api_key', data.api_key);
       }
+
+      loginSuccess();
+      showToast('Conta criada com sucesso! Pela guia Configurações você copia sua chave de integração.', 'success');
+
+    } catch (err: any) {
+      errorEl.textContent = err.message || 'Erro ao criar conta';
     } finally { btn.disabled = false; }
   });
 }
@@ -530,9 +589,24 @@ function initMerchantForm() {
 // SETTINGS
 // =========================================
 function loadSettings() {
-  $('#settings-apikey').textContent = apiKey.substring(0, 12) + '••••••••••••';
-  $('#settings-merchantid').textContent = '—';
-  $('#settings-name').textContent = 'Bisteco';
+  const rawKey = window.sessionStorage.getItem('temp_raw_api_key');
+
+  api('/api/v1/auth/me').then(res => {
+    $('#settings-merchantid').textContent = res.id;
+    $('#settings-name').textContent = res.name;
+
+    const tokenEl = $('#settings-apikey');
+    if (rawKey) {
+      tokenEl.textContent = rawKey;
+      tokenEl.style.color = 'var(--success-color)';
+    } else {
+      tokenEl.textContent = `${res.api_key_prefix}••••••••••••••••••••••••••••••`;
+      tokenEl.style.color = 'var(--text-primary)';
+    }
+  }).catch(() => {
+    $('#settings-merchantid').textContent = '—';
+    $('#settings-name').textContent = 'Erro ao carregar';
+  });
 }
 
 // =========================================
@@ -635,24 +709,25 @@ async function init() {
     ($('#api-key-input') as HTMLInputElement).value = '';
   });
 
-  // Auto-login: try server config first, then localStorage
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/dashboard/config`);
-    const data = await res.json();
-    if (data.apiKey) {
-      apiKey = data.apiKey;
-      isAdmin = true; // auto login using env config is always admin
-      loginSuccess();
-      return;
-    }
-  } catch (_) { /* server config not available */ }
-
-  // Fallback: saved session
+  // Auto-login: verify token
   const saved = localStorage.getItem('bisteca_api_key');
   if (saved) {
     apiKey = saved;
-    isAdmin = !saved.startsWith('bst_');
-    loginSuccess();
+    try {
+      const check = await fetch(`${API_BASE}/api/v1/auth/me`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+      const data = await check.json();
+      if (check.ok) {
+        isAdmin = data.role === 'admin';
+        loginSuccess();
+      } else {
+        throw new Error('Token inválido');
+      }
+    } catch (err) {
+      localStorage.removeItem('bisteca_api_key');
+      apiKey = '';
+    }
   }
 
   // Resize

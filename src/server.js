@@ -1,7 +1,7 @@
 const Fastify = require('fastify');
 const path = require('path');
 const config = require('./config');
-const { authMiddleware } = require('./middleware/auth');
+const { apiKeyAuthMiddleware } = require('./middleware/auth');
 const { createChargeHandler, getChargeHandler } = require('./routes/charges');
 const { wooviWebhookHandler } = require('./routes/webhooks');
 const { startPaymentWorker } = require('./workers/payment');
@@ -32,6 +32,15 @@ async function buildApp() {
     // Plugins
     await app.register(require('@fastify/cors'), { origin: true });
     await app.register(require('@fastify/rate-limit'), { global: false });
+    await app.register(require('@fastify/jwt'), { secret: process.env.JWT_SECRET || 'super-secret-bisteca-key-2024' });
+
+    app.decorate('authenticate', async function (request, reply) {
+        try {
+            await request.jwtVerify();
+        } catch (err) {
+            reply.status(401).send({ error: 'Token inválido ou expirado' });
+        }
+    });
 
     // Serve dashboard static files in production
     const dashboardPath = path.join(__dirname, '..', 'dashboard', 'dist');
@@ -58,6 +67,8 @@ async function buildApp() {
     // Rotas Públicas (sem auth)
     // ========================================
 
+    app.register(require('./routes/auth'), { prefix: '/api/v1/auth' });
+
     // Health check
     app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -75,8 +86,8 @@ async function buildApp() {
     // ========================================
 
     app.register(async function apiRoutes(api) {
-        // Auth middleware em todas as rotas deste escopo
-        api.addHook('preHandler', authMiddleware);
+        // Auth middleware em todas as rotas deste escopo (Apenas API KEY raw para Bots)
+        api.addHook('preHandler', apiKeyAuthMiddleware);
 
         // Cobranças
         api.post('/api/v1/charges', {
@@ -90,17 +101,15 @@ async function buildApp() {
         }, createChargeHandler);
 
         api.get('/api/v1/charges/:correlationID', getChargeHandler);
-
-        // Saques (Payouts)
-        api.register(require('./routes/payouts'), { prefix: '/api/v1/payouts' });
     });
 
     // ========================================
-    // Rotas de Admin e Dashboard
+    // Rotas de Admin e Dashboard (JWT Auth)
     // ========================================
     app.register(require('./routes/admin'), { prefix: '/api/v1/admin' });
     app.register(require('./routes/dashboard'), { prefix: '/api/v1/dashboard' });
     app.register(require('./routes/merchant-dashboard'), { prefix: '/api/v1/merchant-dashboard' });
+    app.register(require('./routes/payouts'), { prefix: '/api/v1/payouts' });
 
     return app;
 }

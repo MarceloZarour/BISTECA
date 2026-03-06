@@ -695,7 +695,6 @@ select {
 
 .page.active {
     display: block;
-    animation: pageIn 0.3s var(--ease) both;
 }
 
 @keyframes pageIn {

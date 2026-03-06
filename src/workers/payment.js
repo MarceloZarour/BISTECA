@@ -93,7 +93,7 @@ async function handleChargeCompleted(correlationId, payload) {
         chargeId: correlationId,
         merchantAccountId: merchant.account_id,
         amount: charge.value,
-        feeRate: config.platform.feeRate,
+        feeRate: Number(merchant.fee_rate) || config.platform.feeRate,
         idempotencyKey: `charge_${correlationId}`,
     });
 

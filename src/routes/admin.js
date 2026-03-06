@@ -23,7 +23,7 @@ async function adminRoutes(app) {
     // ==========================================
     app.get('/merchants', async (request, reply) => {
         const merchants = await db('merchants')
-            .select('id', 'name', 'email', 'api_key_prefix', 'webhook_url', 'pix_key', 'pix_key_type', 'is_active', 'created_at')
+            .select('id', 'name', 'email', 'fee_rate', 'api_key_prefix', 'webhook_url', 'pix_key', 'pix_key_type', 'is_active', 'created_at')
             .orderBy('created_at', 'desc');
 
         // Buscar saldos
@@ -55,7 +55,7 @@ async function adminRoutes(app) {
     // Criar um novo Bisteco
     // ==========================================
     app.post('/merchants', async (request, reply) => {
-        const { name, email, webhookUrl, pixKey, pixKeyType } = request.body;
+        const { name, email, feeRate, webhookUrl, pixKey, pixKeyType } = request.body;
 
         if (!name || !email) {
             return reply.status(400).send({ error: 'Name and email are required' });
@@ -79,6 +79,7 @@ async function adminRoutes(app) {
                 const [merchant] = await trx('merchants').insert({
                     name,
                     email,
+                    fee_rate: feeRate ? parseFloat(feeRate) : 0.0500,
                     api_key_hash: apiKeyHash,
                     api_key_prefix: apiKeyPrefix,
                     webhook_url: webhookUrl || null,

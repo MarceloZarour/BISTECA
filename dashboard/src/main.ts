@@ -449,6 +449,7 @@ async function loadBistecos() {
             <tr>
                 <td style="font-weight:600;">${m.name}</td>
                 <td style="color:var(--text-tertiary);">${m.email}</td>
+                <td style="font-weight:600; color:var(--text-primary);">${(m.fee_rate * 100).toFixed(2).replace('.00', '')}%</td>
                 <td style="font-family:monospace;font-size:12px;">${m.api_key_prefix}••••••••</td>
                 <td style="font-weight:600; color:var(--success-color);">${fmt(m.balance)}</td>
                 <td style="color:var(--text-tertiary);">${fmtDateShort(m.created_at)}</td>
@@ -479,11 +480,13 @@ function initMerchantForm() {
 
     const name = ($('#new-merchant-name') as HTMLInputElement).value.trim();
     const email = ($('#new-merchant-email') as HTMLInputElement).value.trim();
+    const feeInput = ($('#new-merchant-fee') as HTMLInputElement).value.trim();
+    const feeRate = feeInput ? parseFloat(feeInput) / 100 : 0.05;
 
     try {
       const res = await api('/api/v1/admin/merchants', {
         method: 'POST',
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email, feeRate }),
       });
 
       resultEl.textContent = `${res.merchant.name} cadastrado com sucesso!`;

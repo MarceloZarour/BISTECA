@@ -8,6 +8,7 @@ const API_BASE = '';  // relative — works via Vite proxy (dev) and same-origin
 
 // State
 let apiKey = '';
+let isAdmin = false;
 
 // DOM
 const $ = (sel: string) => document.querySelector(sel) as HTMLElement;
@@ -92,15 +93,16 @@ function initLogin() {
 
     try {
       apiKey = key;
-      // We validate using an admin endpoint to ensure this is the DASHBOARD_API_KEY
-      await api('/api/v1/dashboard/stats');
+      isAdmin = !key.startsWith('bst_');
+      const testUrl = isAdmin ? '/api/v1/dashboard/stats' : '/api/v1/merchant-dashboard/stats';
+      await api(testUrl);
       loginSuccess();
     } catch (err: any) {
       if (err.status === 401 || err.status === 403) {
-        errorEl.textContent = 'Acesso Negado (Use a DASHBOARD_API_KEY)';
+        errorEl.textContent = 'Chave de Acesso Inválida';
         apiKey = '';
       } else {
-        loginSuccess();
+        errorEl.textContent = 'Erro ao conectar';
       }
     } finally { btn.disabled = false; }
   });
@@ -115,6 +117,9 @@ function loginSuccess() {
   $('#greeting').textContent = `${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'} 👋`;
   $('#chart-date').textContent = fmtDateShort();
 
+  const bistecosNav = document.querySelector('.nav-item[data-page="bistecos"]') as HTMLElement;
+  if (bistecosNav) bistecosNav.style.display = isAdmin ? 'flex' : 'none';
+
   navigateTo('overview');
 }
 
@@ -123,8 +128,13 @@ function loginSuccess() {
 // =========================================
 async function loadOverview() {
   try {
-    const res = await api('/api/v1/dashboard/stats');
-    const { kpis, charts } = res;
+    const url = isAdmin ? '/api/v1/dashboard/stats' : '/api/v1/merchant-dashboard/stats';
+    const res = await api(url);
+    const { kpis, charts, merchantInfo } = res;
+
+    if (merchantInfo && merchantInfo.name) {
+      $('#user-name').textContent = merchantInfo.name;
+    }
 
     // Update KPI cards
     $('#kpi-vendas').textContent = fmt(kpis.vendas);
@@ -323,7 +333,8 @@ function loadFinanceiro() {
 
 async function loadSaldoTab() {
   try {
-    const res = await api('/api/v1/dashboard/payouts');
+    const url = isAdmin ? '/api/v1/dashboard/payouts' : '/api/v1/merchant-dashboard/payouts';
+    const res = await api(url);
     const payouts = res.payouts || [];
     const availableTotal = res.availableBalance || 0;
 
@@ -382,7 +393,8 @@ async function loadTransacoesTab() {
   tbody.innerHTML = '';
 
   try {
-    const res = await api('/api/v1/dashboard/transactions');
+    const url = isAdmin ? '/api/v1/dashboard/transactions' : '/api/v1/merchant-dashboard/transactions';
+    const res = await api(url);
     const txs = res.transactions || [];
 
     if (txs.length === 0) {
@@ -629,6 +641,7 @@ async function init() {
     const data = await res.json();
     if (data.apiKey) {
       apiKey = data.apiKey;
+      isAdmin = true; // auto login using env config is always admin
       loginSuccess();
       return;
     }
@@ -636,7 +649,11 @@ async function init() {
 
   // Fallback: saved session
   const saved = localStorage.getItem('bisteca_api_key');
-  if (saved) { apiKey = saved; loginSuccess(); }
+  if (saved) {
+    apiKey = saved;
+    isAdmin = !saved.startsWith('bst_');
+    loginSuccess();
+  }
 
   // Resize
   window.addEventListener('resize', () => {

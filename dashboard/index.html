@@ -23,8 +23,9 @@
             </div>
             <form id="login-form" class="login-form">
                 <div class="input-group">
-                    <label for="api-key-input">Chave Mestra Administrativa</label>
-                    <input type="password" id="api-key-input" placeholder="Sua DASHBOARD_API_KEY" autocomplete="off" />
+                    <label for="api-key-input">Token de Acesso</label>
+                    <input type="password" id="api-key-input"
+                        placeholder="Chave Mestra Admin ou Token de Integração do Lojista" autocomplete="off" />
                 </div>
                 <button type="submit" id="login-btn" class="btn-primary">
                     <span>Entrar</span>
@@ -114,7 +115,9 @@
             <section id="page-overview" class="page active">
                 <header class="page-header">
                     <div>
-                        <h2 class="page-title">Visão Geral</h2>
+                        <h2 class="page-title">Visão Geral <span id="user-name"
+                                style="margin-left:8px;font-size:16px;color:var(--primary-color);font-weight:600;"></span>
+                        </h2>
                         <p class="page-subtitle" id="greeting"></p>
                     </div>
                 </header>

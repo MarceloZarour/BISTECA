@@ -100,6 +100,7 @@ async function buildApp() {
     // ========================================
     app.register(require('./routes/admin'), { prefix: '/api/v1/admin' });
     app.register(require('./routes/dashboard'), { prefix: '/api/v1/dashboard' });
+    app.register(require('./routes/merchant-dashboard'), { prefix: '/api/v1/merchant-dashboard' });
 
     return app;
 }

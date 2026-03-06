@@ -83,7 +83,6 @@ select {
    Landing Page / Login V2
    ========================================= */
 #login-screen.login-landing {
-    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;

@@ -682,6 +682,8 @@ select {
     padding: 32px 40px 60px;
     min-height: 100vh;
     max-width: 1600px;
+    flex: 1;
+    min-width: 0;
 }
 
 /* =========================================
@@ -689,11 +691,11 @@ select {
    ========================================= */
 .page {
     display: none;
-    animation: pageIn 0.3s var(--ease) both;
 }
 
 .page.active {
     display: block;
+    animation: pageIn 0.3s var(--ease) both;
 }
 
 @keyframes pageIn {

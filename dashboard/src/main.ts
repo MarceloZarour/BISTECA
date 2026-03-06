@@ -85,7 +85,10 @@ function navigateTo(page: string) {
   $$('.nav-item').forEach(el => el.classList.remove('active'));
 
   const target = $(`#page-${page}`);
-  if (target) { target.classList.remove('active'); void target.offsetWidth; target.classList.add('active'); }
+  if (target) {
+    void document.body.offsetWidth;        // flush: garante que remoção do active foi processada
+    target.classList.add('active');
+  }
 
   const nav = $(`.nav-item[data-page="${page}"]`);
   if (nav) nav.classList.add('active');

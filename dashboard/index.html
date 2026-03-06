@@ -3,8 +3,18 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>BISTECA · Painel do Bisteco</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#8B5CF6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BISTECA" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta name="description" content="Painel do Bisteco BISTECA — Gerencie vendas, saldo e saques Pix." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -685,11 +695,9 @@ app = Flask(__name__)
                             <h3>Taxa de conversão</h3>
                         </div>
                         <div class="card-body conversion-body">
-                            <div class="conversion-value" id="conv-rate">0%</div>
-                            <div class="conversion-label">PIX</div>
                             <div class="conversion-ring">
                                 <svg viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.04)"
+                                    <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)"
                                         stroke-width="8" />
                                     <circle cx="50" cy="50" r="42" fill="none" stroke="url(#ring-grad)" stroke-width="8"
                                         stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round"
@@ -701,6 +709,10 @@ app = Flask(__name__)
                                         </linearGradient>
                                     </defs>
                                 </svg>
+                                <div class="conversion-center">
+                                    <div class="conversion-value" id="conv-rate">0%</div>
+                                    <div class="conversion-label">PIX</div>
+                                </div>
                             </div>
                         </div>
                     </div>

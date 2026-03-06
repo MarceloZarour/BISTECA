@@ -1101,36 +1101,44 @@ select {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    position: relative;
-}
-
-.conversion-value {
-    font-size: 32px;
-    font-weight: 700;
-}
-
-.conversion-label {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    justify-content: center;
+    flex: 1;
 }
 
 .conversion-ring {
-    width: 120px;
-    height: 120px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0.15;
+    position: relative;
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
 }
 
 .conversion-ring svg {
     width: 100%;
     height: 100%;
     transform: rotate(-90deg);
+}
+
+.conversion-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.conversion-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.conversion-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
 }
 
 /* =========================================
@@ -1420,8 +1428,12 @@ canvas {
     background: #0c0c0f;
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: var(--radius-sm);
-    overflow: hidden;
+    overflow: visible; /* allow inner pre to scroll horizontally */
     margin-top: 16px;
+}
+
+.code-block pre {
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
 
 .code-label {
@@ -1494,8 +1506,14 @@ canvas {
 
 @media (max-width: 640px) {
     .tutorial-step { flex-direction: column; gap: 12px; }
-    .tutorial-step-left { flex-direction: row; width: 100%; }
+    .tutorial-step-left { flex-direction: row; width: 100%; align-items: center; }
     .step-line { display: none; }
+    .tutorial-step-right { padding-bottom: 16px; width: 100%; min-width: 0; }
+    .tutorial-step-card { padding: 16px 14px; overflow-x: hidden; }
+    .tutorial-step-card h3 { font-size: 14px; }
+    .code-block { margin-top: 12px; border-radius: var(--radius-sm); overflow: hidden; }
+    .code-block pre { overflow-x: auto; font-size: 11px; padding: 12px 14px; border-radius: 0; }
+    .tut-tip { font-size: 12px; flex-direction: column; gap: 6px; }
 }
 
 /* =========================================

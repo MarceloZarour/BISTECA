@@ -92,11 +92,12 @@ function initLogin() {
 
     try {
       apiKey = key;
-      await api('/api/v1/charges/ping-' + Date.now());
+      // We validate using an admin endpoint to ensure this is the DASHBOARD_API_KEY
+      await api('/api/v1/dashboard/stats');
       loginSuccess();
     } catch (err: any) {
       if (err.status === 401 || err.status === 403) {
-        errorEl.textContent = 'Chave de API inválida';
+        errorEl.textContent = 'Acesso Negado (Use a DASHBOARD_API_KEY)';
         apiKey = '';
       } else {
         loginSuccess();

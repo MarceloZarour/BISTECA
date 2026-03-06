@@ -838,10 +838,20 @@ function loadApiPage() {
 function loadSettings() {
   const rawKey = window.sessionStorage.getItem('temp_raw_api_key');
 
-  // URL da API dinâmica
-  const apiUrl = `${window.location.origin}/api/v1`;
+  // URL do endpoint de cobranças
+  const chargesUrl = `${window.location.origin}/api/v1/charges`;
   const apiUrlEl = $('#settings-apiurl');
-  if (apiUrlEl) apiUrlEl.textContent = apiUrl;
+  if (apiUrlEl) apiUrlEl.textContent = chargesUrl;
+
+  const copyUrlBtn = $('#copy-apiurl-btn') as HTMLButtonElement;
+  if (copyUrlBtn) {
+    copyUrlBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(chargesUrl).then(() => {
+        copyUrlBtn.textContent = '✅ Copiado!';
+        setTimeout(() => copyUrlBtn.textContent = 'Copiar', 2000);
+      });
+    });
+  }
 
   api('/api/v1/auth/me').then(res => {
     const nameEl = $('#settings-name');

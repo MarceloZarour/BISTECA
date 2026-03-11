@@ -21,8 +21,10 @@ async function buildApp() {
     });
 
     // Permite body vazio em requisições JSON (usado pela validação de webhook da Woovi)
+    // Preserva o raw body para validação de assinatura HMAC do webhook
     app.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
         try {
+            req.rawBody = body; // preserva string original para HMAC
             const parsed = body === '' ? {} : JSON.parse(body);
             done(null, parsed);
         } catch (err) {

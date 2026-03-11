@@ -9,16 +9,46 @@ const paymentQueue = new Queue('payment-processing', { connection: redis });
 const webhookDispatchQueue = new Queue('webhook-dispatch', { connection: redis });
 
 /**
- * Valida a assinatura HMAC-SHA256 do webhook da Woovi.
+ * Valida a autenticação do webhook da Woovi/OpenPix.
+ *
+ * A OpenPix suporta dois mecanismos:
+ * 1. Authorization header: quando o webhook é criado com o campo `authorization`,
+ *    a OpenPix envia esse valor no header `Authorization` de cada chamada.
+ * 2. HMAC-SHA256: assinatura sobre o raw body no header `x-openpix-signature`.
+ *
+ * Esta função tenta ambos, aceitando qualquer um que seja válido.
  */
+function validateWebhookAuth(request) {
+    if (!config.woovi.webhookSecret) return true; // sem secret configurado — aceita tudo
+
+    // Mecanismo 1: Authorization header (campo `authorization` na criação do webhook)
+    const authHeader = request.headers['authorization'];
+    if (authHeader && authHeader === config.woovi.webhookSecret) return true;
+
+    // Mecanismo 2: HMAC-SHA256 sobre o raw body
+    const signature = request.headers['x-openpix-signature'] || request.headers['x-webhook-signature'];
+    if (signature && request.rawBody != null) {
+        const expected = crypto
+            .createHmac('sha256', config.woovi.webhookSecret)
+            .update(request.rawBody) // raw body original, não re-serializado
+            .digest('hex');
+        try {
+            return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+        } catch {
+            return false;
+        }
+    }
+
+    return false;
+}
+
+// Mantida por compatibilidade com testes unitários existentes
 function validateSignature(payload, signature) {
     if (!signature || !config.woovi.webhookSecret) return false;
-
     const expected = crypto
         .createHmac('sha256', config.woovi.webhookSecret)
         .update(typeof payload === 'string' ? payload : JSON.stringify(payload))
         .digest('hex');
-
     try {
         return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
     } catch {
@@ -39,11 +69,12 @@ async function wooviWebhookHandler(request, reply) {
         return reply.status(200).send({ status: 'ok' });
     }
 
-    const signature = request.headers['x-openpix-signature'] || request.headers['x-webhook-signature'];
-
-    // 1) Validar assinatura (se secret configurado)
-    if (config.woovi.webhookSecret && !validateSignature(payload, signature)) {
-        request.log.warn('Webhook com assinatura inválida rejeitado');
+    // 1) Validar autenticação (Authorization header ou HMAC-SHA256)
+    if (!validateWebhookAuth(request)) {
+        request.log.warn({
+            authHeader: request.headers['authorization'] ? 'present' : 'absent',
+            sigHeader: request.headers['x-openpix-signature'] || request.headers['x-webhook-signature'] ? 'present' : 'absent',
+        }, 'Webhook com autenticação inválida rejeitado');
         return reply.status(401).send({ error: 'Invalid signature' });
     }
 
@@ -58,7 +89,7 @@ async function wooviWebhookHandler(request, reply) {
             event_type: eventType,
             correlation_id: correlationId,
             payload: JSON.stringify(payload),
-            signature: signature || null,
+            signature: request.headers['x-openpix-signature'] || request.headers['x-webhook-signature'] || null,
             status: 'received',
         }).onConflict(['source', 'correlation_id', 'event_type']).ignore();
     } catch (err) {

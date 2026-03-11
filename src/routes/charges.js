@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const woovi = require('../services/woovi');
 const db = require('../database/connection');
+const ledger = require('../services/ledger');
+const config = require('../config');
 
 /**
  * Rota: POST /api/v1/charges
@@ -58,6 +60,7 @@ async function createChargeHandler(request, reply) {
 /**
  * Rota: GET /api/v1/charges/:correlationID
  * Busca status de uma cobrança.
+ * Se pendente, verifica status na Woovi em tempo real (fallback ao webhook).
  */
 async function getChargeHandler(request, reply) {
     const { correlationID } = request.params;
@@ -69,6 +72,71 @@ async function getChargeHandler(request, reply) {
 
     if (!charge) {
         return reply.status(404).send({ error: 'Cobrança não encontrada' });
+    }
+
+    // Se a cobrança está pendente, verifica na Woovi em tempo real
+    if (charge.status === 'pending') {
+        try {
+            const wooviData = await woovi.getCharge(correlationID);
+            const wooviStatus = wooviData.charge?.status;
+
+            if (wooviStatus === 'COMPLETED') {
+                // Pagamento confirmado na Woovi — processa inline
+                const merchant = await db('merchants').where('id', charge.merchant_id).first();
+
+                if (merchant) {
+                    // Ledger é idempotente via idempotency_key — seguro chamar múltiplas vezes
+                    await ledger.processPayment({
+                        chargeId: correlationID,
+                        merchantAccountId: merchant.account_id,
+                        amount: charge.value,
+                        feeRate: Number(merchant.fee_rate) || config.platform.feeRate,
+                        idempotencyKey: `charge_${correlationID}`,
+                    });
+
+                    await db('charges')
+                        .where({ correlation_id: correlationID })
+                        .update({ status: 'paid', paid_at: new Date() });
+
+                    charge.status = 'paid';
+                    charge.paid_at = new Date();
+
+                    request.log.info(`Cobrança ${correlationID} confirmada via consulta direta à Woovi`);
+
+                    // Enfileira webhook pro merchant (se ainda não foi enviado pelo worker)
+                    const { Queue } = require('bullmq');
+                    const redis = require('../redis');
+                    const webhookDispatchQueue = new Queue('webhook-dispatch', { connection: redis });
+
+                    await webhookDispatchQueue.add('dispatch', {
+                        merchantId: merchant.id,
+                        webhookUrl: merchant.webhook_url,
+                        event: 'charge.paid',
+                        data: {
+                            correlationID,
+                            value: charge.value,
+                            paidAt: charge.paid_at,
+                            metadata: charge.metadata
+                                ? (typeof charge.metadata === 'string' ? JSON.parse(charge.metadata) : charge.metadata)
+                                : null,
+                        },
+                    }, {
+                        jobId: `dispatch_paid_${correlationID}`,
+                        attempts: 8,
+                        backoff: { type: 'exponential', delay: 1000 },
+                    });
+                }
+            } else if (wooviStatus === 'EXPIRED' || wooviStatus === 'INACTIVE') {
+                await db('charges')
+                    .where({ correlation_id: correlationID, status: 'pending' })
+                    .update({ status: 'expired' });
+
+                charge.status = 'expired';
+            }
+        } catch (err) {
+            // Falha na Woovi API — retorna status local (melhor que falhar o request inteiro)
+            request.log.warn({ err: err.message, correlationID }, 'Falha ao verificar status na Woovi — retornando status local');
+        }
     }
 
     return reply.send({

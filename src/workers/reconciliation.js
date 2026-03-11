@@ -6,17 +6,17 @@ const config = require('../config');
 
 /**
  * Job de reconciliação: verifica cobranças pendentes e atualiza com base no status da Woovi.
- * Roda a cada 15 minutos.
+ * Roda a cada 2 minutos como safety net para webhooks perdidos.
  */
 function startReconciliationWorker() {
-    cron.schedule('*/15 * * * *', async () => {
+    cron.schedule('*/2 * * * *', async () => {
         console.log('[Reconciliation] Iniciando reconciliação...');
 
         try {
-            // Busca cobranças pendentes há mais de 10 minutos
+            // Busca cobranças pendentes há mais de 1 minuto
             const pendingCharges = await db('charges')
                 .where('status', 'pending')
-                .where('created_at', '<', new Date(Date.now() - 10 * 60 * 1000))
+                .where('created_at', '<', new Date(Date.now() - 60 * 1000))
                 .limit(50);
 
             console.log(`[Reconciliation] ${pendingCharges.length} cobranças pendentes para verificar`);
@@ -65,7 +65,7 @@ function startReconciliationWorker() {
         }
     });
 
-    console.log('[Reconciliation] Worker de reconciliação agendado (a cada 15 minutos)');
+    console.log('[Reconciliation] Worker de reconciliação agendado (a cada 2 minutos)');
 }
 
 module.exports = { startReconciliationWorker };

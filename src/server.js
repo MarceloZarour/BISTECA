@@ -9,6 +9,7 @@ const { startWebhookDispatcher } = require('./workers/webhook-dispatcher');
 const { startReconciliationWorker } = require('./workers/reconciliation');
 const { startPayoutWorker } = require('./workers/payout');
 const { startTelegramBot } = require('./workers/telegram-bot');
+const woovi = require('./services/woovi');
 
 async function buildApp() {
     const app = Fastify({
@@ -134,6 +135,38 @@ async function start() {
         startReconciliationWorker();
         startPayoutWorker();
         startTelegramBot();
+
+        // Auto-registra webhook na OpenPix (idempotente — não duplica se já existir)
+        if (process.env.BASE_URL && config.woovi.appId) {
+            const webhookUrl = `${process.env.BASE_URL}/webhooks/woovi`;
+            woovi.createWebhook({
+                url: webhookUrl,
+                event: 'OPENPIX:CHARGE_COMPLETED',
+                name: 'bisteca-charge-completed',
+                authorization: config.woovi.webhookSecret || undefined,
+            }).then(() => {
+                console.log(`📡 Webhook registrado na OpenPix: ${webhookUrl}`);
+            }).catch((err) => {
+                // Ignora erro se webhook já existe (409) — apenas loga outros erros
+                if (err.status !== 409) {
+                    console.warn(`⚠️ Falha ao registrar webhook na OpenPix: ${err.message}`);
+                    console.warn('Verifique manualmente em https://app.woovi.com → Configurações → Webhooks');
+                } else {
+                    console.log(`📡 Webhook já registrado na OpenPix: ${webhookUrl}`);
+                }
+            });
+
+            // Também registra para expiração
+            woovi.createWebhook({
+                url: webhookUrl,
+                event: 'OPENPIX:CHARGE_EXPIRED',
+                name: 'bisteca-charge-expired',
+                authorization: config.woovi.webhookSecret || undefined,
+            }).catch(() => {}); // Silencioso — menos crítico
+        } else {
+            console.warn('⚠️ BASE_URL ou WOOVI_APP_ID não configurados — webhook não registrado automaticamente');
+            console.warn('Configure BASE_URL=https://bisteca-production.up.railway.app no .env');
+        }
 
     } catch (err) {
         app.log.error(err);
